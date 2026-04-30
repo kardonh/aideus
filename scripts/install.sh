@@ -978,6 +978,10 @@ install_deps() {
                 break
             fi
         done
+        if [ "$need_build_tools" = true ] && [ "${SKIP_SYSTEM_PACKAGES:-false}" = "true" ]; then
+            log_info "--skip-system-packages set; skipping build-tools install (most deps ship wheels)"
+            need_build_tools=false
+        fi
         if [ "$need_build_tools" = true ]; then
             log_info "Some build tools may be needed for Python packages..."
             if command -v sudo &> /dev/null; then
