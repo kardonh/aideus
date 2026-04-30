@@ -1,9 +1,9 @@
 import Database from "better-sqlite3";
 import { join } from "path";
 import { existsSync } from "fs";
-import { HERMES_HOME } from "./installer";
+import { AIDEUS_HOME } from "./installer";
 
-const DB_PATH = join(HERMES_HOME, "state.db");
+const DB_PATH = join(AIDEUS_HOME, "state.db");
 
 export interface SessionSummary {
   id: string;

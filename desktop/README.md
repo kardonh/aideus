@@ -1,27 +1,29 @@
-<img width="100%" alt="HERMES DESKTOP" src="https://github.com/user-attachments/assets/80585955-3bae-4aee-af90-a1e61757ccb8" />
+<img width="100%" alt="AIDEUS DESKTOP" src="https://github.com/user-attachments/assets/80585955-3bae-4aee-af90-a1e61757ccb8" />
 
 <br/>
 <p align="center">
-  <a href="https://hermes-agent.nousresearch.com/docs/"><img src="https://img.shields.io/badge/Docs-hermes--agent.nousresearch.com-FFD700?style=for-the-badge" alt="Documentation"></a>
+  <a href="https://aideus-agent.nousresearch.com/docs/"><img src="https://img.shields.io/badge/Docs-aideus--agent.nousresearch.com-FFD700?style=for-the-badge" alt="Documentation"></a>
   <a href="https://discord.gg/NousResearch"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
-  <a href="https://github.com/fathah/hermes-desktop/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
-  <a href="https://github.com/fathah/hermes-desktop/releases/"><img src="https://img.shields.io/badge/Download-Releases-FF6600?style=for-the-badge" alt="Releases"></a>
+  <a href="https://github.com/fathah/aideus-desktop/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
+  <a href="https://github.com/fathah/aideus-desktop/releases/"><img src="https://img.shields.io/badge/Download-Releases-FF6600?style=for-the-badge" alt="Releases"></a>
 </p>
 
-> **This project is in active development.** Features may change, and some things might break. If you run into a problem or have an idea, [open an issue](https://github.com/fathah/hermes-desktop/issues). Contributions are welcome!
+> **This project is in active development.** Features may change, and some things might break. If you run into a problem or have an idea, [open an issue](https://github.com/fathah/aideus-desktop/issues). Contributions are welcome!
 
 ## Languages
 
 - English: `README.md`
 - 简体中文: `README.zh-CN.md`
 
-Hermes Desktop is a native desktop app for installing, configuring, and chatting with [Hermes Agent](https://github.com/NousResearch/hermes-agent) — a self-improving AI assistant with tool use, multi-platform messaging, and a closed learning loop.
+Aideus Desktop is a native desktop app for installing, configuring, and chatting with [Aideus](https://github.com/Kardonh/aideus) — a self-improving AI assistant with tool use, multi-platform messaging, and a closed learning loop.
 
-Instead of managing the CLI by hand, the app walks through install, provider setup, and day-to-day usage in one place. It uses the official Hermes install script, stores Hermes in `~/.hermes`, and gives you a GUI for chat, sessions, profiles, memory, skills, tools, scheduling, messaging gateways, and more.
+> Forked from [fathah/hermes-desktop](https://github.com/fathah/hermes-desktop) (MIT). All UI/UX credit to the original author.
+
+Instead of managing the CLI by hand, the app walks through install, provider setup, and day-to-day usage in one place. It uses the official Aideus install script, stores Aideus in `~/.aideus`, and gives you a GUI for chat, sessions, profiles, memory, skills, tools, scheduling, messaging gateways, and more.
 
 ## Install
 
-Download the latest build from the [Releases](https://github.com/fathah/hermes-desktop/releases/) page.
+Download the latest build from the [Releases](https://github.com/fathah/aideus-desktop/releases/) page.
 
 | Platform | File                  |
 | -------- | --------------------- |
@@ -31,27 +33,27 @@ Download the latest build from the [Releases](https://github.com/fathah/hermes-d
 > **macOS users:** The app is not code-signed or notarized. macOS will block it on first launch. To fix this, run the following after installing:
 >
 > ```bash
-> xattr -cr "/Applications/Hermes Agent.app"
+> xattr -cr "/Applications/Aideus Agent.app"
 > ```
 >
 > Or right-click the app → **Open** → click **Open** in the confirmation dialog.
 
 ## Features
 
-- **Guided first-run install** for Hermes Agent with progress tracking and dependency resolution
+- **Guided first-run install** for Aideus Agent with progress tracking and dependency resolution
 - **Multi-provider support** — OpenRouter, Anthropic, OpenAI, Google (Gemini), xAI (Grok), Nous Portal, Qwen, MiniMax, Hugging Face, Groq, and local OpenAI-compatible endpoints (LM Studio, Ollama, vLLM, llama.cpp)
 - **Streaming chat UI** with SSE streaming, tool progress indicators, markdown rendering, and syntax highlighting
 - **Token usage tracking** — live prompt/completion token counts and cost display in the chat footer, plus a `/usage` slash command
 - **22 slash commands** — `/new`, `/clear`, `/fast`, `/web`, `/image`, `/browse`, `/code`, `/shell`, `/usage`, `/help`, `/tools`, `/skills`, `/model`, `/memory`, `/persona`, `/version`, `/compact`, `/compress`, `/undo`, `/retry`, `/debug`, `/status`, and more
 - **Session management** — full-text search (SQLite FTS5), date-grouped history, resume and search across conversations
-- **Profile switching** — create, delete, and switch between separate Hermes environments with isolated config
+- **Profile switching** — create, delete, and switch between separate Aideus environments with isolated config
 - **14 toolsets** — web, browser, terminal, file, code execution, vision, image gen, TTS, skills, memory, session search, clarify, delegation, MoA, and task planning
 - **Memory system** — view/edit memory entries, user profile memory, capacity tracking, and discoverable memory providers (Honcho, Hindsight, Mem0, RetainDB, Supermemory, ByteRover)
 - **Persona editor** — edit and reset your agent's SOUL.md personality
 - **Saved models** — CRUD management for model configurations across providers
 - **Scheduled tasks** — cron job builder (minutes, hourly, daily, weekly, custom cron) with 15 delivery targets
 - **16 messaging gateways** — Telegram, Discord, Slack, WhatsApp, Signal, Matrix, Mattermost, Email (IMAP/SMTP), SMS (Twilio/Vonage), iMessage (BlueBubbles), DingTalk, Feishu/Lark, WeCom, WeChat (iLink Bot), Webhooks, Home Assistant
-- **Hermes Office (Claw3d)** — visual 3D interface with dev server and adapter management
+- **Aideus Office (Claw3d)** — visual 3D interface with dev server and adapter management
 - **Backup, import & debug dump** — full data backup/restore and system diagnostics from Settings
 - **Log viewer** — view gateway and agent logs directly from the Settings screen
 - **Auto-updater** — check for and install updates via electron-updater
@@ -79,10 +81,10 @@ Download the latest build from the [Releases](https://github.com/fathah/hermes-d
 
 On first launch, the app:
 
-1. Checks whether Hermes is already installed in `~/.hermes`.
-2. If not installed, runs the official Hermes installer with dependency resolution (Git, uv, Python 3.11+).
+1. Checks whether Aideus is already installed in `~/.aideus`.
+2. If not installed, runs the official Aideus installer with dependency resolution (Git, uv, Python 3.11+).
 3. Prompts for an API provider or local model endpoint.
-4. Saves provider config and API keys through Hermes config files.
+4. Saves provider config and API keys through Aideus config files.
 5. Launches the main workspace once setup is complete.
 
 Chat requests go through a local API server (`http://127.0.0.1:8642`) with SSE streaming. The desktop app parses the stream in real time, rendering tool progress, markdown content, and token usage as it arrives.
@@ -93,7 +95,7 @@ Chat requests go through a local API server (`http://127.0.0.1:8642`) with SSE s
 |--------|-------------|
 | **Chat** | Streaming conversation UI with slash commands, tool progress, and token tracking |
 | **Sessions** | Browse, search, and resume past conversations |
-| **Agents** | Create, delete, and switch between Hermes profiles |
+| **Agents** | Create, delete, and switch between Aideus profiles |
 | **Skills** | Browse, install, and manage bundled and installed skills |
 | **Models** | Manage saved model configurations per provider |
 | **Memory** | View/edit memory entries, user profile, and configure memory providers |
@@ -137,8 +139,8 @@ Exa Search, Parallel API, Tavily, Firecrawl, FAL.ai (image generation), Honcho, 
 ### Prerequisites
 
 - Node.js and npm
-- A Unix-like shell environment for the Hermes installer
-- Network access for downloading Hermes during first-run install
+- A Unix-like shell environment for the Aideus installer
+- Network access for downloading Aideus during first-run install
 
 ### Install dependencies
 
@@ -182,7 +184,7 @@ npm run build:linux
 
 ## First-Time Setup
 
-When the app opens for the first time, it will either detect an existing Hermes installation or offer to install it for you.
+When the app opens for the first time, it will either detect an existing Aideus installation or offer to install it for you.
 
 Supported setup paths in the UI:
 
@@ -198,15 +200,15 @@ Local presets are included for:
 - vLLM
 - llama.cpp
 
-Hermes files are managed in:
+Aideus files are managed in:
 
-- `~/.hermes`
-- `~/.hermes/.env`
-- `~/.hermes/config.yaml`
-- `~/.hermes/hermes-agent`
-- `~/.hermes/profiles/` — named profile directories
-- `~/.hermes/state.db` — session history database
-- `~/.hermes/cron/jobs.json` — scheduled tasks
+- `~/.aideus`
+- `~/.aideus/.env`
+- `~/.aideus/config.yaml`
+- `~/.aideus/aideus-agent`
+- `~/.aideus/profiles/` — named profile directories
+- `~/.aideus/state.db` — session history database
+- `~/.aideus/cron/jobs.json` — scheduled tasks
 
 ## Tech Stack
 
@@ -221,17 +223,17 @@ Hermes files are managed in:
 
 ## Notes
 
-- The desktop app depends on the upstream Hermes Agent project for agent behavior and tool execution.
-- The built-in installer runs the official Hermes install script with `--skip-setup`, then completes provider configuration in the GUI.
+- The desktop app depends on the upstream Aideus Agent project for agent behavior and tool execution.
+- The built-in installer runs the official Aideus install script with `--skip-setup`, then completes provider configuration in the GUI.
 - Local model providers do not require an API key, but the compatible server must already be running.
 - Alternative npm registry routes are supported for environments with restricted network access.
 
 ## Contributing
 
-Contributions are welcome! Check out the [Contributing Guide](CONTRIBUTING.md) to get started. If you're not sure where to begin, take a look at the [open issues](https://github.com/NousResearch/hermes-desktop/issues). Found a bug or have a feature request? [File an issue](https://github.com/NousResearch/hermes-desktop/issues/new).
+Contributions are welcome! Check out the [Contributing Guide](CONTRIBUTING.md) to get started. If you're not sure where to begin, take a look at the [open issues](https://github.com/Kardonh/aideus/issues). Found a bug or have a feature request? [File an issue](https://github.com/Kardonh/aideus/issues/new).
 
 ## Related Project
 
-For the core agent, docs, and CLI workflows, see the main Hermes Agent repository:
+For the core agent, docs, and CLI workflows, see the main Aideus Agent repository:
 
-- https://github.com/NousResearch/hermes-agent
+- https://github.com/Kardonh/aideus

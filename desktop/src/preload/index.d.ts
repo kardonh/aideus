@@ -15,7 +15,7 @@ interface InstallProgress {
   log: string;
 }
 
-interface HermesAPI {
+interface AideusAPI {
   // Installation
   checkInstall: () => Promise<InstallStatus>;
   startInstall: () => Promise<{ success: boolean; error?: string }>;
@@ -23,11 +23,11 @@ interface HermesAPI {
     callback: (progress: InstallProgress) => void,
   ) => () => void;
 
-  // Hermes engine info
-  getHermesVersion: () => Promise<string | null>;
-  refreshHermesVersion: () => Promise<string | null>;
-  runHermesDoctor: () => Promise<string>;
-  runHermesUpdate: () => Promise<{ success: boolean; error?: string }>;
+  // Aideus engine info
+  getAideusVersion: () => Promise<string | null>;
+  refreshAideusVersion: () => Promise<string | null>;
+  runAideusDoctor: () => Promise<string>;
+  runAideusUpdate: () => Promise<{ success: boolean; error?: string }>;
 
   // OpenClaw migration
   checkOpenClaw: () => Promise<{ found: boolean; path: string | null }>; 
@@ -41,7 +41,7 @@ interface HermesAPI {
   setEnv: (key: string, value: string, profile?: string) => Promise<boolean>;
   getConfig: (key: string, profile?: string) => Promise<string | null>;
   setConfig: (key: string, value: string, profile?: string) => Promise<boolean>;
-  getHermesHome: (profile?: string) => Promise<string>;
+  getAideusHome: (profile?: string) => Promise<string>;
   getModelConfig: (
     profile?: string,
   ) => Promise<{ provider: string; model: string; baseUrl: string }>;
@@ -394,16 +394,16 @@ interface HermesAPI {
   openExternal: (url: string) => Promise<void>;
 
   // Backup / Import
-  runHermesBackup: (
+  runAideusBackup: (
     profile?: string,
   ) => Promise<{ success: boolean; path?: string; error?: string }>;
-  runHermesImport: (
+  runAideusImport: (
     archivePath: string,
     profile?: string,
   ) => Promise<{ success: boolean; error?: string }>;
 
   // Debug dump
-  runHermesDump: () => Promise<string>;
+  runAideusDump: () => Promise<string>;
 
   // Memory providers
   discoverMemoryProviders: (profile?: string) => Promise<
@@ -433,6 +433,6 @@ interface HermesAPI {
 declare global {
   interface Window {
     electron: ElectronAPI;
-    hermesAPI: HermesAPI;
+    aideusAPI: AideusAPI;
   }
 }

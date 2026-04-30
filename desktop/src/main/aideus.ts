@@ -5,10 +5,10 @@ import { homedir } from "os";
 import http from "http";
 import https from "https";
 import {
-  HERMES_HOME,
-  HERMES_REPO,
-  HERMES_PYTHON,
-  HERMES_SCRIPT,
+  AIDEUS_HOME,
+  AIDEUS_REPO,
+  AIDEUS_PYTHON,
+  AIDEUS_SCRIPT,
   getEnhancedPath,
 } from "./installer";
 import { getModelConfig, readEnv, getConnectionConfig } from "./config";
@@ -87,7 +87,7 @@ function isApiServerReady(): Promise<boolean> {
 
 function ensureApiServerConfig(): void {
   try {
-    const configPath = join(HERMES_HOME, "config.yaml");
+    const configPath = join(AIDEUS_HOME, "config.yaml");
     if (!existsSync(configPath)) return;
     const content = readFileSync(configPath, "utf-8");
     // If api_server is already configured, skip
@@ -149,7 +149,7 @@ function sendMessageViaApi(
   messages.push({ role: "user", content: message });
 
   const body = JSON.stringify({
-    model: mc.model || "hermes-agent",
+    model: mc.model || "aideus-agent",
     messages,
     stream: true,
   });
@@ -179,7 +179,7 @@ function sendMessageViaApi(
   function probeRealError(): void {
     // When streaming returns empty, make a non-streaming request to surface the real error
     const probeBody = JSON.stringify({
-      model: mc.model || "hermes-agent",
+      model: mc.model || "aideus-agent",
       messages: [{ role: "user", content: message }],
       stream: false,
     });
@@ -228,7 +228,7 @@ function sendMessageViaApi(
 
   /** Handle a custom SSE event (non-data lines with `event:` prefix). */
   function processCustomEvent(eventType: string, data: string): void {
-    if (eventType === "hermes.tool.progress" && cb.onToolProgress) {
+    if (eventType === "aideus.tool.progress" && cb.onToolProgress) {
       try {
         const payload = JSON.parse(data);
         const label = payload.label || payload.tool || "";
@@ -303,7 +303,7 @@ function sendMessageViaApi(
       signal: controller.signal,
     },
     (res) => {
-      const sid = res.headers["x-hermes-session-id"];
+      const sid = res.headers["x-aideus-session-id"];
       if (sid && typeof sid === "string") sessionId = sid;
 
       if (res.statusCode !== 200) {
@@ -339,7 +339,7 @@ function sendMessageViaApi(
         }
         if (!dataLine) return false;
         if (eventType) {
-          // Custom event (e.g. hermes.tool.progress) — never signals [DONE]
+          // Custom event (e.g. aideus.tool.progress) — never signals [DONE]
           processCustomEvent(eventType, dataLine);
           return false;
         }
@@ -393,7 +393,7 @@ function sendMessageViaApi(
 //  CLI fallback (slow path — spawns process)
 // ────────────────────────────────────────────────────
 
-const NOISE_PATTERNS = [/^[╭╰│╮╯─┌┐└┘┤├┬┴┼]/, /⚕\s*Hermes/];
+const NOISE_PATTERNS = [/^[╭╰│╮╯─┌┐└┘┤├┬┴┼]/, /⚕\s*Aideus/];
 
 function sendMessageViaCli(
   message: string,
@@ -404,7 +404,7 @@ function sendMessageViaCli(
   const mc = getModelConfig(profile);
   const profileEnv = readEnv(profile);
 
-  const args = [HERMES_SCRIPT];
+  const args = [AIDEUS_SCRIPT];
   if (profile && profile !== "default") {
     args.push("-p", profile);
   }
@@ -422,7 +422,7 @@ function sendMessageViaCli(
     ...(process.env as Record<string, string>),
     PATH: getEnhancedPath(),
     HOME: homedir(),
-    HERMES_HOME: HERMES_HOME,
+    AIDEUS_HOME: AIDEUS_HOME,
     PYTHONUNBUFFERED: "1",
   };
 
@@ -457,7 +457,7 @@ function sendMessageViaCli(
 
   const isCustomEndpoint = LOCAL_PROVIDERS.has(mc.provider);
   if (isCustomEndpoint && mc.baseUrl) {
-    env.HERMES_INFERENCE_PROVIDER = "custom";
+    env.AIDEUS_INFERENCE_PROVIDER = "custom";
     env.OPENAI_BASE_URL = mc.baseUrl.replace(/\/+$/, "");
 
     // Resolve the right API key: check URL-specific key first, then OPENAI_API_KEY
@@ -483,8 +483,8 @@ function sendMessageViaCli(
     delete env.OPENROUTER_BASE_URL;
   }
 
-  const proc = spawn(HERMES_PYTHON, args, {
-    cwd: HERMES_REPO,
+  const proc = spawn(AIDEUS_PYTHON, args, {
+    cwd: AIDEUS_REPO,
     env,
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -549,8 +549,8 @@ function sendMessageViaCli(
       const detail = stderrBuffer.trim();
       cb.onError(
         detail
-          ? `Hermes exited with code ${code}: ${detail}`
-          : `Hermes exited with code ${code}. Check your model configuration and API key.`,
+          ? `Aideus exited with code ${code}: ${detail}`
+          : `Aideus exited with code ${code}. Check your model configuration and API key.`,
       );
     }
   });
@@ -650,7 +650,7 @@ export function startGateway(profile?: string): boolean {
     ...(process.env as Record<string, string>),
     PATH: getEnhancedPath(),
     HOME: homedir(),
-    HERMES_HOME: HERMES_HOME,
+    AIDEUS_HOME: AIDEUS_HOME,
     API_SERVER_ENABLED: "true", // Ensure API server starts with gateway
   };
 
@@ -662,8 +662,8 @@ export function startGateway(profile?: string): boolean {
     }
   }
 
-  gatewayProcess = spawn(HERMES_PYTHON, [HERMES_SCRIPT, "gateway"], {
-    cwd: HERMES_REPO,
+  gatewayProcess = spawn(AIDEUS_PYTHON, [AIDEUS_SCRIPT, "gateway"], {
+    cwd: AIDEUS_REPO,
     env: gatewayEnv,
     stdio: "ignore",
     detached: true,
@@ -690,7 +690,7 @@ export function startGateway(profile?: string): boolean {
 }
 
 function readPidFile(): number | null {
-  const pidFile = join(HERMES_HOME, "gateway.pid");
+  const pidFile = join(AIDEUS_HOME, "gateway.pid");
   if (!existsSync(pidFile)) return null;
   try {
     const raw = readFileSync(pidFile, "utf-8").trim();
@@ -722,7 +722,7 @@ export function stopGateway(force = false): void {
   // Always clear the PID file once we've signalled it. Leaving a stale PID
   // around means the next isGatewayRunning() / stopGateway() call can hit
   // an unrelated process that the OS has since assigned the same PID.
-  const pidFile = join(HERMES_HOME, "gateway.pid");
+  const pidFile = join(AIDEUS_HOME, "gateway.pid");
   if (existsSync(pidFile)) {
     try {
       unlinkSync(pidFile);

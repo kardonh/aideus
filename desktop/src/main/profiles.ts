@@ -4,13 +4,13 @@ import { homedir } from "os";
 import { promises as fs } from "fs";
 import { existsSync } from "fs";
 import {
-  HERMES_HOME,
-  HERMES_PYTHON,
-  HERMES_SCRIPT,
+  AIDEUS_HOME,
+  AIDEUS_PYTHON,
+  AIDEUS_SCRIPT,
   getEnhancedPath,
 } from "./installer";
 
-const PROFILES_DIR = join(HERMES_HOME, "profiles");
+const PROFILES_DIR = join(AIDEUS_HOME, "profiles");
 
 export interface ProfileInfo {
   name: string;
@@ -85,7 +85,7 @@ async function isGatewayRunning(profilePath: string): Promise<boolean> {
 }
 
 async function getActiveProfileName(): Promise<string> {
-  const activeFile = join(HERMES_HOME, "active_profile");
+  const activeFile = join(AIDEUS_HOME, "active_profile");
   try {
     const name = await fs.readFile(activeFile, "utf-8");
     return name.trim() || "default";
@@ -107,19 +107,19 @@ export async function listProfiles(): Promise<ProfileInfo[]> {
   const activeName = await getActiveProfileName();
   const profiles: ProfileInfo[] = [];
 
-  // Default profile is HERMES_HOME itself
+  // Default profile is AIDEUS_HOME itself
   const [defaultConfig, defaultHasEnv, defaultHasSoul, defaultSkills, defaultGw] =
     await Promise.all([
-      readProfileConfig(HERMES_HOME),
-      fileExists(join(HERMES_HOME, ".env")),
-      fileExists(join(HERMES_HOME, "SOUL.md")),
-      countSkills(HERMES_HOME),
-      isGatewayRunning(HERMES_HOME),
+      readProfileConfig(AIDEUS_HOME),
+      fileExists(join(AIDEUS_HOME, ".env")),
+      fileExists(join(AIDEUS_HOME, "SOUL.md")),
+      countSkills(AIDEUS_HOME),
+      isGatewayRunning(AIDEUS_HOME),
     ]);
 
   profiles.push({
     name: "default",
-    path: HERMES_HOME,
+    path: AIDEUS_HOME,
     isDefault: true,
     isActive: activeName === "default",
     model: defaultConfig.model,
@@ -130,7 +130,7 @@ export async function listProfiles(): Promise<ProfileInfo[]> {
     gatewayRunning: defaultGw,
   });
 
-  // Named profiles under ~/.hermes/profiles/
+  // Named profiles under ~/.aideus/profiles/
   if (existsSync(PROFILES_DIR)) {
     try {
       const dirs = await fs.readdir(PROFILES_DIR);
@@ -184,13 +184,13 @@ export function createProfile(
     const args = clone
       ? ["profile", "create", name, "--clone"]
       : ["profile", "create", name];
-    execFileSync(HERMES_PYTHON, [HERMES_SCRIPT, ...args], {
-      cwd: join(HERMES_HOME, "hermes-agent"),
+    execFileSync(AIDEUS_PYTHON, [AIDEUS_SCRIPT, ...args], {
+      cwd: join(AIDEUS_HOME, "aideus-agent"),
       env: {
         ...process.env,
         PATH: getEnhancedPath(),
         HOME: homedir(),
-        HERMES_HOME,
+        AIDEUS_HOME,
       },
       stdio: "pipe",
       timeout: 15000,
@@ -211,15 +211,15 @@ export function deleteProfile(name: string): {
     return { success: false, error: "Cannot delete the default profile" };
   try {
     execFileSync(
-      HERMES_PYTHON,
-      [HERMES_SCRIPT, "profile", "delete", name, "--yes"],
+      AIDEUS_PYTHON,
+      [AIDEUS_SCRIPT, "profile", "delete", name, "--yes"],
       {
-        cwd: join(HERMES_HOME, "hermes-agent"),
+        cwd: join(AIDEUS_HOME, "aideus-agent"),
         env: {
           ...process.env,
           PATH: getEnhancedPath(),
           HOME: homedir(),
-          HERMES_HOME,
+          AIDEUS_HOME,
         },
         stdio: "pipe",
         timeout: 15000,
@@ -235,13 +235,13 @@ export function deleteProfile(name: string): {
 
 export function setActiveProfile(name: string): void {
   try {
-    execFileSync(HERMES_PYTHON, [HERMES_SCRIPT, "profile", "use", name], {
-      cwd: join(HERMES_HOME, "hermes-agent"),
+    execFileSync(AIDEUS_PYTHON, [AIDEUS_SCRIPT, "profile", "use", name], {
+      cwd: join(AIDEUS_HOME, "aideus-agent"),
       env: {
         ...process.env,
         PATH: getEnhancedPath(),
         HOME: homedir(),
-        HERMES_HOME,
+        AIDEUS_HOME,
       },
       stdio: "pipe",
       timeout: 10000,

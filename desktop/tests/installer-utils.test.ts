@@ -4,9 +4,9 @@ import { existsSync, readFileSync, mkdirSync, writeFileSync, rmSync } from "fs";
 import { tmpdir } from "os";
 
 // We test the extracted pure functions by importing them.
-// Some functions depend on HERMES_HOME — we mock the module-level constants.
+// Some functions depend on AIDEUS_HOME — we mock the module-level constants.
 
-const TEST_DIR = join(tmpdir(), `hermes-test-${Date.now()}`);
+const TEST_DIR = join(tmpdir(), `aideus-test-${Date.now()}`);
 
 beforeEach(() => {
   mkdirSync(TEST_DIR, { recursive: true });

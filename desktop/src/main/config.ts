@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
-import { HERMES_HOME } from "./installer";
+import { AIDEUS_HOME } from "./installer";
 import { profileHome, escapeRegex, safeWriteFile } from "./utils";
 
 // ── Connection Config (local vs remote) ─────────────────
@@ -12,9 +12,9 @@ export interface ConnectionConfig {
 }
 
 // Lazy getter — avoids circular dependency with installer.ts
-// (HERMES_HOME may not be assigned yet when this module first loads)
+// (AIDEUS_HOME may not be assigned yet when this module first loads)
 function desktopConfigFile(): string {
-  return join(HERMES_HOME, "desktop.json");
+  return join(AIDEUS_HOME, "desktop.json");
 }
 
 function readDesktopConfig(): Record<string, unknown> {
@@ -28,8 +28,8 @@ function readDesktopConfig(): Record<string, unknown> {
 }
 
 function writeDesktopConfig(data: Record<string, unknown>): void {
-  if (!existsSync(HERMES_HOME)) {
-    mkdirSync(HERMES_HOME, { recursive: true });
+  if (!existsSync(AIDEUS_HOME)) {
+    mkdirSync(AIDEUS_HOME, { recursive: true });
   }
   writeFileSync(desktopConfigFile(), JSON.stringify(data, null, 2), "utf-8");
 }
@@ -266,7 +266,7 @@ export function setModelConfig(
   safeWriteFile(configFile, content);
 }
 
-export function getHermesHome(profile?: string): string {
+export function getAideusHome(profile?: string): string {
   return profilePaths(profile).home;
 }
 
@@ -356,7 +356,7 @@ export function setPlatformEnabled(
 // ── Credential Pool (auth.json) ──────────────────────────
 
 function authFilePath(): string {
-  return join(HERMES_HOME, "auth.json");
+  return join(AIDEUS_HOME, "auth.json");
 }
 
 interface CredentialEntry {

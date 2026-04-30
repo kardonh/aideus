@@ -7,7 +7,7 @@ import { Download, Upload, FileText } from "lucide-react";
 // Read cached values from localStorage for instant display
 function getCachedVersion(): string | null {
   try {
-    return localStorage.getItem("hermes-version-cache");
+    return localStorage.getItem("aideus-version-cache");
   } catch {
     return null;
   }
@@ -15,7 +15,7 @@ function getCachedVersion(): string | null {
 
 function getCachedOpenClaw(): { found: boolean; path: string | null } | null {
   try {
-    const raw = localStorage.getItem("hermes-openclaw-cache");
+    const raw = localStorage.getItem("aideus-openclaw-cache");
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -32,12 +32,12 @@ function Settings({
   const { t } = useI18n();
   const [env, setEnv] = useState<Record<string, string>>({});
   const [savedKey, setSavedKey] = useState<string | null>(null);
-  const [hermesHome, setHermesHome] = useState("");
+  const [aideusHome, setAideusHome] = useState("");
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const { theme, setTheme } = useTheme();
 
-  // Hermes engine info — initialize from localStorage cache for instant display
-  const [hermesVersion, setHermesVersion] = useState<string | null>(
+  // Aideus engine info — initialize from localStorage cache for instant display
+  const [aideusVersion, setAideusVersion] = useState<string | null>(
     getCachedVersion,
   );
   const [appVersion, setAppVersion] = useState("");
@@ -58,7 +58,7 @@ function Settings({
     cachedClaw?.path ?? null,
   );
   const [migrationDismissed, setMigrationDismissed] = useState(
-    () => localStorage.getItem("hermes-openclaw-dismissed") === "true",
+    () => localStorage.getItem("aideus-openclaw-dismissed") === "true",
   );
   const [migrating, setMigrating] = useState(false);
   const [migrationLog, setMigrationLog] = useState("");
@@ -116,15 +116,15 @@ function Settings({
   const loadConfig = useCallback(async (): Promise<void> => {
     // Load fast config first (cached in main process)
     const [envData, home, mc, pool, aVersion, conn] = await Promise.all([
-      window.hermesAPI.getEnv(profile),
-      window.hermesAPI.getHermesHome(profile),
-      window.hermesAPI.getModelConfig(profile),
-      window.hermesAPI.getCredentialPool(),
-      window.hermesAPI.getAppVersion(),
-      window.hermesAPI.getConnectionConfig(),
+      window.aideusAPI.getEnv(profile),
+      window.aideusAPI.getAideusHome(profile),
+      window.aideusAPI.getModelConfig(profile),
+      window.aideusAPI.getCredentialPool(),
+      window.aideusAPI.getAppVersion(),
+      window.aideusAPI.getConnectionConfig(),
     ]);
     setEnv(envData);
-    setHermesHome(home);
+    setAideusHome(home);
     setModelProvider(mc.provider);
     setModelName(mc.model);
     setModelBaseUrl(mc.baseUrl);
@@ -141,31 +141,31 @@ function Settings({
     });
 
     // Load network settings from config.yaml
-    window.hermesAPI.getConfig("network.force_ipv4", profile).then((v) => {
+    window.aideusAPI.getConfig("network.force_ipv4", profile).then((v) => {
       setForceIpv4(v === "true" || v === "True");
     });
-    window.hermesAPI.getConfig("network.proxy", profile).then((v) => {
+    window.aideusAPI.getConfig("network.proxy", profile).then((v) => {
       setHttpProxy(v || "");
     });
 
     // Defer slow calls — background refresh, cached values show instantly
-    window.hermesAPI.getHermesVersion().then((v) => {
-      setHermesVersion(v);
+    window.aideusAPI.getAideusVersion().then((v) => {
+      setAideusVersion(v);
       if (v) {
         try {
-          localStorage.setItem("hermes-version-cache", v);
+          localStorage.setItem("aideus-version-cache", v);
         } catch {
           /* ignore */
         }
       }
     });
 
-    if (localStorage.getItem("hermes-openclaw-dismissed") !== "true") {
-      window.hermesAPI.checkOpenClaw().then((claw) => {
+    if (localStorage.getItem("aideus-openclaw-dismissed") !== "true") {
+      window.aideusAPI.checkOpenClaw().then((claw) => {
         setOpenclawFound(claw.found);
         setOpenclawPath(claw.path);
         try {
-          localStorage.setItem("hermes-openclaw-cache", JSON.stringify(claw));
+          localStorage.setItem("aideus-openclaw-cache", JSON.stringify(claw));
         } catch {
           /* ignore */
         }
@@ -182,7 +182,7 @@ function Settings({
   useEffect(() => {
     if (!visible) return;
     (async (): Promise<void> => {
-      const mc = await window.hermesAPI.getModelConfig(profile);
+      const mc = await window.aideusAPI.getModelConfig(profile);
       modelLoaded.current = false;
       setModelProvider(mc.provider);
       setModelName(mc.model);
@@ -196,7 +196,7 @@ function Settings({
   // Auto-save model config when values change (debounced)
   const saveModelConfig = useCallback(async () => {
     if (!modelLoaded.current) return;
-    await window.hermesAPI.setModelConfig(
+    await window.aideusAPI.setModelConfig(
       modelProvider,
       modelName,
       modelBaseUrl,
@@ -205,7 +205,7 @@ function Settings({
     // Auto-save to models library (dedup handled by backend)
     if (modelName.trim()) {
       const displayName = modelName.split("/").pop() || modelName;
-      await window.hermesAPI.addModel(
+      await window.aideusAPI.addModel(
         displayName,
         modelProvider,
         modelName,
@@ -229,7 +229,7 @@ function Settings({
 
   async function handleBlur(key: string): Promise<void> {
     const value = env[key] || "";
-    await window.hermesAPI.setEnv(key, value, profile);
+    await window.aideusAPI.setEnv(key, value, profile);
     setSavedKey(key);
     setTimeout(() => setSavedKey(null), 2000);
   }
@@ -248,7 +248,7 @@ function Settings({
         label: poolNewLabel.trim() || `Key ${existing.length + 1}`,
       },
     ];
-    await window.hermesAPI.setCredentialPool(poolProvider, entries);
+    await window.aideusAPI.setCredentialPool(poolProvider, entries);
     setCredPool((prev) => ({ ...prev, [poolProvider]: entries }));
     setPoolNewKey("");
     setPoolNewLabel("");
@@ -260,7 +260,7 @@ function Settings({
   ): Promise<void> {
     const entries = [...(credPool[provider] || [])];
     entries.splice(index, 1);
-    await window.hermesAPI.setCredentialPool(provider, entries);
+    await window.aideusAPI.setCredentialPool(provider, entries);
     setCredPool((prev) => ({ ...prev, [provider]: entries }));
   }
 
@@ -278,12 +278,12 @@ function Settings({
     setMigrationLog("");
     setMigrationResult(null);
 
-    const cleanup = window.hermesAPI.onInstallProgress((p) => {
+    const cleanup = window.aideusAPI.onInstallProgress((p) => {
       setMigrationLog(p.log);
     });
 
     try {
-      const result = await window.hermesAPI.runClawMigrate();
+      const result = await window.aideusAPI.runClawMigrate();
       cleanup();
       if (result.success) {
         setMigrationResult(t("settings.migrationComplete"));
@@ -302,12 +302,12 @@ function Settings({
   }
 
   function handleDismissMigration(): void {
-    localStorage.setItem("hermes-openclaw-dismissed", "true");
+    localStorage.setItem("aideus-openclaw-dismissed", "true");
     setMigrationDismissed(true);
   }
 
   async function handleSaveConnection(): Promise<void> {
-    await window.hermesAPI.setConnectionConfig(
+    await window.aideusAPI.setConnectionConfig(
       connMode,
       connRemoteUrl,
       connApiKey,
@@ -324,7 +324,7 @@ function Settings({
     }
     setConnTesting(true);
     setConnStatus(null);
-    const ok = await window.hermesAPI.testRemoteConnection(
+    const ok = await window.aideusAPI.testRemoteConnection(
       url,
       connApiKey.trim(),
     );
@@ -336,7 +336,7 @@ function Settings({
     setConnMode("local");
     setConnRemoteUrl("");
     setConnApiKey("");
-    await window.hermesAPI.setConnectionConfig("local", "", "");
+    await window.aideusAPI.setConnectionConfig("local", "", "");
     setConnStatus(t("settings.switchedToLocal"));
     setTimeout(() => setConnStatus(null), 2000);
   }
@@ -344,7 +344,7 @@ function Settings({
   async function handleBackup(): Promise<void> {
     setBackingUp(true);
     setBackupResult(null);
-    const result = await window.hermesAPI.runHermesBackup(profile);
+    const result = await window.aideusAPI.runAideusBackup(profile);
     setBackingUp(false);
     if (result.success) {
       setBackupResult(`Backup created: ${result.path || "success"}`);
@@ -363,7 +363,7 @@ function Settings({
       setImporting(true);
       setImportResult(null);
       const filePath = (file as File & { path: string }).path;
-      const result = await window.hermesAPI.runHermesImport(filePath, profile);
+      const result = await window.aideusAPI.runAideusImport(filePath, profile);
       setImporting(false);
       if (result.success) {
         setImportResult(t("settings.migrationComplete"));
@@ -375,7 +375,7 @@ function Settings({
   }
 
   async function loadLogs(): Promise<void> {
-    const result = await window.hermesAPI.readLogs(logFile, 300);
+    const result = await window.aideusAPI.readLogs(logFile, 300);
     setLogContent(result.content);
     setLogPath(result.path);
   }
@@ -383,18 +383,18 @@ function Settings({
   async function handleDoctor(): Promise<void> {
     setDoctorRunning(true);
     setDoctorOutput(null);
-    const output = await window.hermesAPI.runHermesDoctor();
+    const output = await window.aideusAPI.runAideusDoctor();
     setDoctorOutput(output);
     setDoctorRunning(false);
   }
 
   // Helper to fetch fresh version, clear backend cache, and update localStorage
   function refreshVersion(): void {
-    window.hermesAPI.refreshHermesVersion().then((v) => {
-      setHermesVersion(v);
+    window.aideusAPI.refreshAideusVersion().then((v) => {
+      setAideusVersion(v);
       if (v) {
         try {
-          localStorage.setItem("hermes-version-cache", v);
+          localStorage.setItem("aideus-version-cache", v);
         } catch {
           /* ignore */
         }
@@ -402,10 +402,10 @@ function Settings({
     });
   }
 
-  async function handleUpdateHermes(): Promise<void> {
+  async function handleUpdateAideus(): Promise<void> {
     setUpdating(true);
     setUpdateResult(null);
-    const result = await window.hermesAPI.runHermesUpdate();
+    const result = await window.aideusAPI.runAideusUpdate();
     setUpdating(false);
     if (result.success) {
       setUpdateResult(t("settings.updateSuccess"));
@@ -417,10 +417,10 @@ function Settings({
     }
   }
 
-  // Parse "Hermes Agent v0.7.0 (2026.4.3) Project: ... Python: 3.11.15 OpenAI SDK: 2.30.0 Update available: ..."
+  // Parse "Aideus Agent v0.7.0 (2026.4.3) Project: ... Python: 3.11.15 OpenAI SDK: 2.30.0 Update available: ..."
   const parsedVersion = (() => {
-    if (!hermesVersion) return null;
-    const v = hermesVersion;
+    if (!aideusVersion) return null;
+    const v = aideusVersion;
     const version = v.match(/v([\d.]+)/)?.[1] || "";
     const date = v.match(/\(([\d.]+)\)/)?.[1] || "";
     const python = v.match(/Python:\s*([\d.]+)/)?.[1] || "";
@@ -438,89 +438,89 @@ function Settings({
 
       <div className="settings-section">
         <div className="settings-section-title">
-          {t("settings.sections.hermesAgent")}
+          {t("settings.sections.aideusAgent")}
         </div>
-        <div className="settings-hermes-info">
-          <div className="settings-hermes-row">
-            <div className="settings-hermes-detail">
-              <span className="settings-hermes-label">
+        <div className="settings-aideus-info">
+          <div className="settings-aideus-row">
+            <div className="settings-aideus-detail">
+              <span className="settings-aideus-label">
                 {t("common.engine")}
               </span>
-              {hermesVersion === null ? (
+              {aideusVersion === null ? (
                 <span className="skeleton skeleton-sm" />
               ) : (
-                <span className="settings-hermes-value">
+                <span className="settings-aideus-value">
                   {parsedVersion
                     ? `v${parsedVersion.version}`
                     : t("settings.notDetected")}
                 </span>
               )}
             </div>
-            <div className="settings-hermes-detail">
-              <span className="settings-hermes-label">
+            <div className="settings-aideus-detail">
+              <span className="settings-aideus-label">
                 {t("common.released")}
               </span>
-              {hermesVersion === null ? (
+              {aideusVersion === null ? (
                 <span className="skeleton skeleton-sm" />
               ) : (
-                <span className="settings-hermes-value">
+                <span className="settings-aideus-value">
                   {parsedVersion?.date || "—"}
                 </span>
               )}
             </div>
-            <div className="settings-hermes-detail">
-              <span className="settings-hermes-label">
+            <div className="settings-aideus-detail">
+              <span className="settings-aideus-label">
                 {t("common.desktop")}
               </span>
               {!appVersion ? (
                 <span className="skeleton skeleton-sm" />
               ) : (
-                <span className="settings-hermes-value">
+                <span className="settings-aideus-value">
                   {t("settings.version", { version: appVersion })}
                 </span>
               )}
             </div>
-            <div className="settings-hermes-detail">
-              <span className="settings-hermes-label">Python</span>
-              {hermesVersion === null ? (
+            <div className="settings-aideus-detail">
+              <span className="settings-aideus-label">Python</span>
+              {aideusVersion === null ? (
                 <span className="skeleton skeleton-sm" />
               ) : (
-                <span className="settings-hermes-value">
+                <span className="settings-aideus-value">
                   {parsedVersion?.python || "—"}
                 </span>
               )}
             </div>
-            <div className="settings-hermes-detail">
-              <span className="settings-hermes-label">OpenAI SDK</span>
-              {hermesVersion === null ? (
+            <div className="settings-aideus-detail">
+              <span className="settings-aideus-label">OpenAI SDK</span>
+              {aideusVersion === null ? (
                 <span className="skeleton skeleton-sm" />
               ) : (
-                <span className="settings-hermes-value">
+                <span className="settings-aideus-value">
                   {parsedVersion?.sdk || "—"}
                 </span>
               )}
             </div>
-            <div className="settings-hermes-detail">
-              <span className="settings-hermes-label">{t("common.home")}</span>
-              {!hermesHome ? (
+            <div className="settings-aideus-detail">
+              <span className="settings-aideus-label">{t("common.home")}</span>
+              {!aideusHome ? (
                 <span className="skeleton skeleton-md" />
               ) : (
-                <span className="settings-hermes-value settings-hermes-path">
-                  {hermesHome}
+                <span className="settings-aideus-value settings-aideus-path">
+                  {aideusHome}
                 </span>
               )}
             </div>
           </div>
           {parsedVersion?.updateInfo && (
-            <div className="settings-hermes-update-badge">
+            <div className="settings-aideus-update-badge">
               {parsedVersion.updateInfo}
             </div>
           )}
-          <div className="settings-hermes-actions">
+          <div className="settings-aideus-actions">
             {parsedVersion?.updateInfo ? (
               <button
                 className="btn btn-primary "
-                onClick={handleUpdateHermes}
+                onClick={handleUpdateAideus}
                 disabled={updating}
               >
                 {updating ? t("settings.updating") : t("settings.updateEngine")}
@@ -542,7 +542,7 @@ function Settings({
               onClick={async () => {
                 setDumpRunning(true);
                 setDumpOutput(null);
-                const output = await window.hermesAPI.runHermesDump();
+                const output = await window.aideusAPI.runAideusDump();
                 setDumpOutput(output);
                 setDumpRunning(false);
               }}
@@ -553,16 +553,16 @@ function Settings({
           </div>
           {updateResult && (
             <div
-              className={`settings-hermes-result ${updateResultType || "error"}`}
+              className={`settings-aideus-result ${updateResultType || "error"}`}
             >
               {updateResult}
             </div>
           )}
           {doctorOutput && (
-            <pre className="settings-hermes-doctor">{doctorOutput}</pre>
+            <pre className="settings-aideus-doctor">{doctorOutput}</pre>
           )}
           {dumpOutput && (
-            <pre className="settings-hermes-doctor">{dumpOutput}</pre>
+            <pre className="settings-aideus-doctor">{dumpOutput}</pre>
           )}
         </div>
       </div>
@@ -633,7 +633,7 @@ function Settings({
                 {t("settings.remoteApiKeyHint")}
               </div>
             </div>
-            <div className="settings-hermes-actions">
+            <div className="settings-aideus-actions">
               <button
                 className="btn btn-secondary"
                 onClick={handleTestConnection}
@@ -670,13 +670,13 @@ function Settings({
             </button>
           </div>
           {migrationLog && (
-            <pre className="settings-hermes-doctor" ref={migrationLogRef}>
+            <pre className="settings-aideus-doctor" ref={migrationLogRef}>
               {migrationLog}
             </pre>
           )}
           {migrationResult && (
             <div
-              className={`settings-hermes-result ${migrationResultType || "error"}`}
+              className={`settings-aideus-result ${migrationResultType || "error"}`}
             >
               {migrationResult}
             </div>
@@ -687,7 +687,7 @@ function Settings({
               onClick={handleMigrate}
               disabled={migrating}
             >
-              {migrating ? t("settings.migrating") : t("settings.migrateToHermes")}
+              {migrating ? t("settings.migrating") : t("settings.migrateToAideus")}
             </button>
             <button
               className="btn btn-secondary "
@@ -748,7 +748,7 @@ function Settings({
                 onChange={async (e) => {
                   const val = e.target.checked;
                   setForceIpv4(val);
-                  await window.hermesAPI.setConfig(
+                  await window.aideusAPI.setConfig(
                     "network.force_ipv4",
                     val ? "true" : "false",
                     profile,
@@ -772,7 +772,7 @@ function Settings({
             value={httpProxy}
             onChange={(e) => setHttpProxy(e.target.value)}
             onBlur={async () => {
-              await window.hermesAPI.setConfig(
+              await window.aideusAPI.setConfig(
                 "network.proxy",
                 httpProxy.trim(),
                 profile,
@@ -954,7 +954,7 @@ function Settings({
           <div className="settings-field-hint" style={{ marginBottom: 10 }}>
             {t("settings.dataHint")}
           </div>
-          <div className="settings-hermes-actions">
+          <div className="settings-aideus-actions">
             <button
               className="btn btn-secondary"
               onClick={handleBackup}
@@ -974,7 +974,7 @@ function Settings({
           </div>
           {backupResult && (
             <div
-              className={`settings-hermes-result ${backupResult.includes("created") || backupResult.includes("success") ? "success" : "error"}`}
+              className={`settings-aideus-result ${backupResult.includes("created") || backupResult.includes("success") ? "success" : "error"}`}
               style={{ marginTop: 8 }}
             >
               {backupResult}
@@ -982,7 +982,7 @@ function Settings({
           )}
           {importResult && (
             <div
-              className={`settings-hermes-result ${importResult.includes("complete") ? "success" : "error"}`}
+              className={`settings-aideus-result ${importResult.includes("complete") ? "success" : "error"}`}
               style={{ marginTop: 8 }}
             >
               {importResult}
@@ -1017,7 +1017,7 @@ function Settings({
                   className={`btn btn-sm ${logFile === f ? "btn-primary" : "btn-secondary"}`}
                   onClick={() => {
                     setLogFile(f);
-                    window.hermesAPI.readLogs(f, 300).then((r) => {
+                    window.aideusAPI.readLogs(f, 300).then((r) => {
                       setLogContent(r.content);
                       setLogPath(r.path);
                     });
@@ -1036,7 +1036,7 @@ function Settings({
               </div>
             )}
             <pre
-              className="settings-hermes-doctor"
+              className="settings-aideus-doctor"
               style={{
                 maxHeight: 300,
                 overflow: "auto",

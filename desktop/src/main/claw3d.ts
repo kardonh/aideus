@@ -9,15 +9,15 @@ import {
 import { join } from "path";
 import { homedir } from "os";
 import { createConnection } from "net";
-import { getEnhancedPath, HERMES_HOME } from "./installer";
+import { getEnhancedPath, AIDEUS_HOME } from "./installer";
 import { stripAnsi, safeWriteFile } from "./utils";
 
-const HERMES_OFFICE_REPO = "https://github.com/fathah/hermes-office";
-const HERMES_OFFICE_DIR = join(HERMES_HOME, "hermes-office");
-const DEV_PID_FILE = join(HERMES_HOME, "claw3d-dev.pid");
-const ADAPTER_PID_FILE = join(HERMES_HOME, "claw3d-adapter.pid");
-const PORT_FILE = join(HERMES_HOME, "claw3d-port");
-const WS_URL_FILE = join(HERMES_HOME, "claw3d-ws-url");
+const AIDEUS_OFFICE_REPO = "https://github.com/fathah/aideus-office";
+const AIDEUS_OFFICE_DIR = join(AIDEUS_HOME, "aideus-office");
+const DEV_PID_FILE = join(AIDEUS_HOME, "claw3d-dev.pid");
+const ADAPTER_PID_FILE = join(AIDEUS_HOME, "claw3d-adapter.pid");
+const PORT_FILE = join(AIDEUS_HOME, "claw3d-port");
+const WS_URL_FILE = join(AIDEUS_HOME, "claw3d-ws-url");
 const DEFAULT_PORT = 3000;
 const DEFAULT_WS_URL = "ws://localhost:18789";
 const CLAW3D_SETTINGS_DIR = join(homedir(), ".openclaw", "claw3d");
@@ -89,7 +89,7 @@ function writeClaw3dSettings(wsUrl?: string): void {
 
     const settings = {
       ...existing,
-      adapter: "hermes",
+      adapter: "aideus",
       url,
       token: "",
     };
@@ -100,19 +100,19 @@ function writeClaw3dSettings(wsUrl?: string): void {
 
   // Write .env in claw3d directory
   try {
-    if (existsSync(HERMES_OFFICE_DIR)) {
-      const envPath = join(HERMES_OFFICE_DIR, ".env");
+    if (existsSync(AIDEUS_OFFICE_DIR)) {
+      const envPath = join(AIDEUS_OFFICE_DIR, ".env");
       const port = getSavedPort();
       const envContent = [
-        "# Auto-configured by Hermes Desktop",
+        "# Auto-configured by Aideus Desktop",
         `PORT=${port}`,
         `HOST=127.0.0.1`,
         `NEXT_PUBLIC_GATEWAY_URL=${url}`,
         `CLAW3D_GATEWAY_URL=${url}`,
         `CLAW3D_GATEWAY_TOKEN=`,
-        `HERMES_ADAPTER_PORT=18789`,
-        `HERMES_MODEL=hermes`,
-        `HERMES_AGENT_NAME=Hermes`,
+        `AIDEUS_ADAPTER_PORT=18789`,
+        `AIDEUS_MODEL=aideus`,
+        `AIDEUS_AGENT_NAME=Aideus`,
         "",
       ].join("\n");
       safeWriteFile(envPath, envContent);
@@ -208,8 +208,8 @@ function isAdapterRunning(): boolean {
 }
 
 export async function getClaw3dStatus(): Promise<Claw3dStatus> {
-  const cloned = existsSync(join(HERMES_OFFICE_DIR, "package.json"));
-  const installed = existsSync(join(HERMES_OFFICE_DIR, "node_modules"));
+  const cloned = existsSync(join(AIDEUS_OFFICE_DIR, "package.json"));
+  const installed = existsSync(join(AIDEUS_OFFICE_DIR, "node_modules"));
   const port = getSavedPort();
   const devRunning = isDevServerRunning();
   // Only check port conflict when dev server is NOT running
@@ -317,14 +317,14 @@ export async function setupClaw3d(
   };
 
   // Step 1: Clone (or pull if already cloned)
-  const cloned = existsSync(join(HERMES_OFFICE_DIR, "package.json"));
+  const cloned = existsSync(join(AIDEUS_OFFICE_DIR, "package.json"));
 
   if (!cloned) {
     emit(1, "Cloning Claw3D repository...", "Cloning from GitHub...\n");
     await new Promise<void>((resolve, reject) => {
       const proc = spawn(
         "git",
-        ["clone", HERMES_OFFICE_REPO, HERMES_OFFICE_DIR],
+        ["clone", AIDEUS_OFFICE_REPO, AIDEUS_OFFICE_DIR],
         {
           cwd: homedir(),
           env,
@@ -359,7 +359,7 @@ export async function setupClaw3d(
     );
     await new Promise<void>((resolve) => {
       const proc = spawn("git", ["pull", "--ff-only"], {
-        cwd: HERMES_OFFICE_DIR,
+        cwd: AIDEUS_OFFICE_DIR,
         env,
         stdio: ["ignore", "pipe", "pipe"],
       });
@@ -385,7 +385,7 @@ export async function setupClaw3d(
 
   await new Promise<void>((resolve, reject) => {
     const proc = spawn(npm, ["install"], {
-      cwd: HERMES_OFFICE_DIR,
+      cwd: AIDEUS_OFFICE_DIR,
       env,
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -442,14 +442,14 @@ function killProcessTree(proc: ChildProcess): void {
 
 export function startDevServer(): boolean {
   if (isDevServerRunning()) return true;
-  if (!existsSync(join(HERMES_OFFICE_DIR, "node_modules"))) return false;
+  if (!existsSync(join(AIDEUS_OFFICE_DIR, "node_modules"))) return false;
 
   devServerError = "";
   devServerLogs = "";
   const port = getSavedPort();
   const npm = findNpm();
   const proc = spawn(npm, ["run", "dev"], {
-    cwd: HERMES_OFFICE_DIR,
+    cwd: AIDEUS_OFFICE_DIR,
     env: {
       ...process.env,
       PATH: getEnhancedPath(),
@@ -518,13 +518,13 @@ export function stopDevServer(): void {
 
 export function startAdapter(): boolean {
   if (isAdapterRunning()) return true;
-  if (!existsSync(join(HERMES_OFFICE_DIR, "node_modules"))) return false;
+  if (!existsSync(join(AIDEUS_OFFICE_DIR, "node_modules"))) return false;
 
   adapterError = "";
   adapterLogs = "";
   const npm = findNpm();
-  const proc = spawn(npm, ["run", "hermes-adapter"], {
-    cwd: HERMES_OFFICE_DIR,
+  const proc = spawn(npm, ["run", "aideus-adapter"], {
+    cwd: AIDEUS_OFFICE_DIR,
     env: {
       ...process.env,
       PATH: getEnhancedPath(),
@@ -557,7 +557,7 @@ export function startAdapter(): boolean {
 
   proc.on("close", (code) => {
     if (code && code !== 0 && !adapterError) {
-      adapterError = `Hermes adapter exited with code ${code}`;
+      adapterError = `Aideus adapter exited with code ${code}`;
     }
     adapterProcess = null;
     cleanupPid(ADAPTER_PID_FILE);
@@ -589,7 +589,7 @@ export function stopAdapter(): void {
 }
 
 export function startAll(): { success: boolean; error?: string } {
-  if (!existsSync(join(HERMES_OFFICE_DIR, "node_modules"))) {
+  if (!existsSync(join(AIDEUS_OFFICE_DIR, "node_modules"))) {
     return {
       success: false,
       error: "Claw3D is not installed. Please install it first.",
@@ -610,7 +610,7 @@ export function startAll(): { success: boolean; error?: string } {
   // Start adapter
   const adapterOk = startAdapter();
   if (!adapterOk) {
-    return { success: false, error: "Failed to start Hermes adapter" };
+    return { success: false, error: "Failed to start Aideus adapter" };
   }
 
   return { success: true };

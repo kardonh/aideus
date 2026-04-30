@@ -5,13 +5,13 @@ import { homedir } from "os";
 import { getModelConfig, getConnectionConfig } from "./config";
 import { stripAnsi } from "./utils";
 
-export const HERMES_HOME = join(homedir(), ".hermes");
-export const HERMES_REPO = join(HERMES_HOME, "hermes-agent");
-export const HERMES_VENV = join(HERMES_REPO, "venv");
-export const HERMES_PYTHON = join(HERMES_VENV, "bin", "python");
-export const HERMES_SCRIPT = join(HERMES_REPO, "hermes");
-export const HERMES_ENV_FILE = join(HERMES_HOME, ".env");
-export const HERMES_CONFIG_FILE = join(HERMES_HOME, "config.yaml");
+export const AIDEUS_HOME = join(homedir(), ".aideus");
+export const AIDEUS_REPO = join(AIDEUS_HOME, "aideus-agent");
+export const AIDEUS_VENV = join(AIDEUS_REPO, "venv");
+export const AIDEUS_PYTHON = join(AIDEUS_VENV, "bin", "python");
+export const AIDEUS_SCRIPT = join(AIDEUS_REPO, "aideus");
+export const AIDEUS_ENV_FILE = join(AIDEUS_HOME, ".env");
+export const AIDEUS_CONFIG_FILE = join(AIDEUS_HOME, "config.yaml");
 
 export interface InstallStatus {
   installed: boolean;
@@ -33,7 +33,7 @@ export function getEnhancedPath(): string {
   const extra = [
     join(home, ".local", "bin"),
     join(home, ".cargo", "bin"),
-    join(HERMES_VENV, "bin"),
+    join(AIDEUS_VENV, "bin"),
     // Node version manager shim directories
     join(home, ".volta", "bin"),
     join(home, ".asdf", "shims"),
@@ -84,20 +84,20 @@ export function checkInstallStatus(): InstallStatus {
     return { installed: true, configured: true, hasApiKey: true, verified: true };
   }
 
-  const installed = existsSync(HERMES_PYTHON) && existsSync(HERMES_SCRIPT);
-  const configured = existsSync(HERMES_ENV_FILE);
+  const installed = existsSync(AIDEUS_PYTHON) && existsSync(AIDEUS_SCRIPT);
+  const configured = existsSync(AIDEUS_ENV_FILE);
   let hasApiKey = false;
   let verified = false;
 
   if (installed) {
     try {
-      execSync(`"${HERMES_PYTHON}" "${HERMES_SCRIPT}" --version`, {
-        cwd: HERMES_REPO,
+      execSync(`"${AIDEUS_PYTHON}" "${AIDEUS_SCRIPT}" --version`, {
+        cwd: AIDEUS_REPO,
         env: {
           ...process.env,
           PATH: getEnhancedPath(),
           HOME: homedir(),
-          HERMES_HOME,
+          AIDEUS_HOME,
         },
         stdio: "ignore",
         timeout: 15000,
@@ -121,7 +121,7 @@ export function checkInstallStatus(): InstallStatus {
 
   if (!hasApiKey && configured) {
     try {
-      const content = readFileSync(HERMES_ENV_FILE, "utf-8");
+      const content = readFileSync(AIDEUS_ENV_FILE, "utf-8");
       for (const line of content.split("\n")) {
         const trimmed = line.trim();
         if (trimmed.startsWith("#")) continue;
@@ -149,9 +149,9 @@ export function checkInstallStatus(): InstallStatus {
 let _cachedVersion: string | null = null;
 let _versionFetching = false;
 
-export async function getHermesVersion(): Promise<string | null> {
+export async function getAideusVersion(): Promise<string | null> {
   if (_cachedVersion !== null) return _cachedVersion;
-  if (!existsSync(HERMES_PYTHON) || !existsSync(HERMES_SCRIPT)) return null;
+  if (!existsSync(AIDEUS_PYTHON) || !existsSync(AIDEUS_SCRIPT)) return null;
   if (_versionFetching) {
     // Wait for in-flight fetch
     return new Promise((resolve) => {
@@ -166,15 +166,15 @@ export async function getHermesVersion(): Promise<string | null> {
   _versionFetching = true;
   return new Promise((resolve) => {
     execFile(
-      HERMES_PYTHON,
-      [HERMES_SCRIPT, "--version"],
+      AIDEUS_PYTHON,
+      [AIDEUS_SCRIPT, "--version"],
       {
-        cwd: HERMES_REPO,
+        cwd: AIDEUS_REPO,
         env: {
           ...process.env,
           PATH: getEnhancedPath(),
           HOME: homedir(),
-          HERMES_HOME,
+          AIDEUS_HOME,
         },
         timeout: 15000,
       },
@@ -195,18 +195,18 @@ export function clearVersionCache(): void {
   _cachedVersion = null;
 }
 
-export function runHermesDoctor(): string {
-  if (!existsSync(HERMES_PYTHON) || !existsSync(HERMES_SCRIPT)) {
-    return "Hermes is not installed.";
+export function runAideusDoctor(): string {
+  if (!existsSync(AIDEUS_PYTHON) || !existsSync(AIDEUS_SCRIPT)) {
+    return "Aideus is not installed.";
   }
   try {
-    const output = execSync(`"${HERMES_PYTHON}" "${HERMES_SCRIPT}" doctor`, {
-      cwd: HERMES_REPO,
+    const output = execSync(`"${AIDEUS_PYTHON}" "${AIDEUS_SCRIPT}" doctor`, {
+      cwd: AIDEUS_REPO,
       env: {
         ...process.env,
         PATH: getEnhancedPath(),
         HOME: homedir(),
-        HERMES_HOME,
+        AIDEUS_HOME,
       },
       stdio: ["ignore", "pipe", "pipe"],
       timeout: 30000,
@@ -233,8 +233,8 @@ export function checkOpenClawExists(): { found: boolean; path: string | null } {
 export async function runClawMigrate(
   onProgress: (progress: InstallProgress) => void,
 ): Promise<void> {
-  if (!existsSync(HERMES_PYTHON) || !existsSync(HERMES_SCRIPT)) {
-    throw new Error("Hermes is not installed.");
+  if (!existsSync(AIDEUS_PYTHON) || !existsSync(AIDEUS_SCRIPT)) {
+    throw new Error("Aideus is not installed.");
   }
 
   const openclaw = checkOpenClawExists();
@@ -257,15 +257,15 @@ export async function runClawMigrate(
   emit(`Migrating from ${openclaw.path}...\n`);
 
   return new Promise((resolve, reject) => {
-    const args = [HERMES_SCRIPT, "claw", "migrate", "--preset", "full"];
+    const args = [AIDEUS_SCRIPT, "claw", "migrate", "--preset", "full"];
 
-    const proc = spawn(HERMES_PYTHON, args, {
-      cwd: HERMES_REPO,
+    const proc = spawn(AIDEUS_PYTHON, args, {
+      cwd: AIDEUS_REPO,
       env: {
         ...process.env,
         PATH: getEnhancedPath(),
         HOME: homedir(),
-        HERMES_HOME,
+        AIDEUS_HOME,
         TERM: "dumb",
       },
       stdio: ["ignore", "pipe", "pipe"],
@@ -294,11 +294,11 @@ export async function runClawMigrate(
   });
 }
 
-export async function runHermesUpdate(
+export async function runAideusUpdate(
   onProgress: (progress: InstallProgress) => void,
 ): Promise<void> {
-  if (!existsSync(HERMES_PYTHON) || !existsSync(HERMES_SCRIPT)) {
-    throw new Error("Hermes is not installed. Please install it first.");
+  if (!existsSync(AIDEUS_PYTHON) || !existsSync(AIDEUS_SCRIPT)) {
+    throw new Error("Aideus is not installed. Please install it first.");
   }
 
   let log = "";
@@ -307,22 +307,22 @@ export async function runHermesUpdate(
     onProgress({
       step: 1,
       totalSteps: 1,
-      title: "Updating Hermes Agent",
+      title: "Updating Aideus Agent",
       detail: text.trim().slice(0, 120),
       log,
     });
   }
 
-  emit("Running hermes update...\n");
+  emit("Running aideus update...\n");
 
   return new Promise((resolve, reject) => {
-    const proc = spawn(HERMES_PYTHON, [HERMES_SCRIPT, "update"], {
-      cwd: HERMES_REPO,
+    const proc = spawn(AIDEUS_PYTHON, [AIDEUS_SCRIPT, "update"], {
+      cwd: AIDEUS_REPO,
       env: {
         ...process.env,
         PATH: getEnhancedPath(),
         HOME: homedir(),
-        HERMES_HOME,
+        AIDEUS_HOME,
         TERM: "dumb",
       },
       stdio: ["ignore", "pipe", "pipe"],
@@ -385,7 +385,7 @@ const STAGE_MARKERS: { pattern: RegExp; step: number; title: string }[] = [
   {
     pattern: /Cloning|cloning|Updating.*repository|Repository/i,
     step: 4,
-    title: "Downloading Hermes Agent",
+    title: "Downloading Aideus Agent",
   },
   {
     pattern: /Creating virtual|virtual environment|venv/i,
@@ -433,7 +433,7 @@ export async function runInstall(
     });
   }
 
-  emit("Running official Hermes install script...\n");
+  emit("Running official Aideus install script...\n");
 
   return new Promise((resolve, reject) => {
     const home = homedir();
@@ -444,7 +444,7 @@ export async function runInstall(
     const shellProfile = getShellProfile(home);
     const installCmd = [
       shellProfile ? `source "${shellProfile}" 2>/dev/null;` : "",
-      "curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash -s -- --skip-setup",
+      "curl -fsSL https://raw.githubusercontent.com/Kardonh/aideus/main/scripts/install.sh | bash -s -- --skip-setup",
     ].join(" ");
 
     const proc = spawn("bash", ["-c", installCmd], {
@@ -473,10 +473,10 @@ export async function runInstall(
       } else {
         // The install script can exit non-zero due to benign issues
         // (e.g. git stash pop failure on already-clean repo).
-        // If Hermes is actually installed and working, treat as success.
-        if (existsSync(HERMES_PYTHON) && existsSync(HERMES_SCRIPT)) {
+        // If Aideus is actually installed and working, treat as success.
+        if (existsSync(AIDEUS_PYTHON) && existsSync(AIDEUS_SCRIPT)) {
           emit(
-            "\nInstall script exited with warnings, but Hermes is installed successfully.\n",
+            "\nInstall script exited with warnings, but Aideus is installed successfully.\n",
           );
           resolve();
         } else {
@@ -499,26 +499,26 @@ export async function runInstall(
 //  Backup & Import
 // ────────────────────────────────────────────────────
 
-export async function runHermesBackup(
+export async function runAideusBackup(
   profile?: string,
 ): Promise<{ success: boolean; path?: string; error?: string }> {
-  if (!existsSync(HERMES_PYTHON) || !existsSync(HERMES_SCRIPT)) {
-    return { success: false, error: "Hermes is not installed." };
+  if (!existsSync(AIDEUS_PYTHON) || !existsSync(AIDEUS_SCRIPT)) {
+    return { success: false, error: "Aideus is not installed." };
   }
-  const args = [HERMES_SCRIPT, "backup"];
+  const args = [AIDEUS_SCRIPT, "backup"];
   if (profile && profile !== "default") args.push("-p", profile);
 
   return new Promise((resolve) => {
     execFile(
-      HERMES_PYTHON,
+      AIDEUS_PYTHON,
       args,
       {
-        cwd: HERMES_REPO,
+        cwd: AIDEUS_REPO,
         env: {
           ...process.env,
           PATH: getEnhancedPath(),
           HOME: homedir(),
-          HERMES_HOME,
+          AIDEUS_HOME,
           TERM: "dumb",
         },
         timeout: 120000,
@@ -545,27 +545,27 @@ export async function runHermesBackup(
   });
 }
 
-export async function runHermesImport(
+export async function runAideusImport(
   archivePath: string,
   profile?: string,
 ): Promise<{ success: boolean; error?: string }> {
-  if (!existsSync(HERMES_PYTHON) || !existsSync(HERMES_SCRIPT)) {
-    return { success: false, error: "Hermes is not installed." };
+  if (!existsSync(AIDEUS_PYTHON) || !existsSync(AIDEUS_SCRIPT)) {
+    return { success: false, error: "Aideus is not installed." };
   }
-  const args = [HERMES_SCRIPT, "import", archivePath];
+  const args = [AIDEUS_SCRIPT, "import", archivePath];
   if (profile && profile !== "default") args.push("-p", profile);
 
   return new Promise((resolve) => {
     execFile(
-      HERMES_PYTHON,
+      AIDEUS_PYTHON,
       args,
       {
-        cwd: HERMES_REPO,
+        cwd: AIDEUS_REPO,
         env: {
           ...process.env,
           PATH: getEnhancedPath(),
           HOME: homedir(),
-          HERMES_HOME,
+          AIDEUS_HOME,
           TERM: "dumb",
         },
         timeout: 120000,
@@ -588,21 +588,21 @@ export async function runHermesImport(
 //  Debug dump
 // ────────────────────────────────────────────────────
 
-export function runHermesDump(): Promise<string> {
-  if (!existsSync(HERMES_PYTHON) || !existsSync(HERMES_SCRIPT)) {
-    return Promise.resolve("Hermes is not installed.");
+export function runAideusDump(): Promise<string> {
+  if (!existsSync(AIDEUS_PYTHON) || !existsSync(AIDEUS_SCRIPT)) {
+    return Promise.resolve("Aideus is not installed.");
   }
   return new Promise((resolve) => {
     execFile(
-      HERMES_PYTHON,
-      [HERMES_SCRIPT, "dump"],
+      AIDEUS_PYTHON,
+      [AIDEUS_SCRIPT, "dump"],
       {
-        cwd: HERMES_REPO,
+        cwd: AIDEUS_REPO,
         env: {
           ...process.env,
           PATH: getEnhancedPath(),
           HOME: homedir(),
-          HERMES_HOME,
+          AIDEUS_HOME,
           TERM: "dumb",
         },
         timeout: 30000,
@@ -637,7 +637,7 @@ export interface MemoryProviderInfo {
 export function discoverMemoryProviders(
   profile?: string,
 ): MemoryProviderInfo[] {
-  const pluginsDir = join(HERMES_REPO, "plugins", "memory");
+  const pluginsDir = join(AIDEUS_REPO, "plugins", "memory");
   if (!existsSync(pluginsDir)) return [];
 
   const activeProvider = getActiveMemoryProvider(profile);
@@ -732,8 +732,8 @@ export function getActiveMemoryProvider(profile?: string): string {
   try {
     const configDir =
       profile && profile !== "default"
-        ? join(HERMES_HOME, "profiles", profile)
-        : HERMES_HOME;
+        ? join(AIDEUS_HOME, "profiles", profile)
+        : AIDEUS_HOME;
     const configPath = join(configDir, "config.yaml");
     if (!existsSync(configPath)) return "";
     const content = readFileSync(configPath, "utf-8");
@@ -754,8 +754,8 @@ export function listMcpServers(
   try {
     const configPath = join(
       profile && profile !== "default"
-        ? join(HERMES_HOME, "profiles", profile)
-        : HERMES_HOME,
+        ? join(AIDEUS_HOME, "profiles", profile)
+        : AIDEUS_HOME,
       "config.yaml",
     );
     if (!existsSync(configPath)) return [];
@@ -819,7 +819,7 @@ export function readLogs(
   logFile = "agent.log",
   lines = 200,
 ): { content: string; path: string } {
-  const logsDir = join(HERMES_HOME, "logs");
+  const logsDir = join(AIDEUS_HOME, "logs");
   // Sanitize: only allow known log file names
   const allowed = ["agent.log", "errors.log", "gateway.log"];
   const file = allowed.includes(logFile) ? logFile : "agent.log";

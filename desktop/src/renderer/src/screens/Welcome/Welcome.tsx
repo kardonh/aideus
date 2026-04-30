@@ -1,5 +1,5 @@
 import { useState } from "react";
-import HermesLogo from "../../components/common/HermesLogo";
+import AideusLogo from "../../components/common/AideusLogo";
 import {
   ArrowRight,
   Refresh,
@@ -38,13 +38,13 @@ function Welcome({
     setTesting(true);
     setRemoteError(null);
     try {
-      const ok = await window.hermesAPI.testRemoteConnection(url, key);
+      const ok = await window.aideusAPI.testRemoteConnection(url, key);
       if (ok) {
-        await window.hermesAPI.setConnectionConfig("remote", url, key);
+        await window.aideusAPI.setConnectionConfig("remote", url, key);
         onRecheck();
       } else {
         setRemoteError(
-          "Could not reach Hermes at this URL. Check the URL and API key.",
+          "Could not reach Aideus at this URL. Check the URL and API key.",
         );
       }
     } catch {
@@ -57,7 +57,7 @@ function Welcome({
   if (showRemote) {
     return (
       <div className="screen welcome-screen">
-        <HermesLogo size={36} />
+        <AideusLogo size={36} />
         <h1 className="welcome-title" style={{ fontSize: 22 }}>
           {t("welcome.connectRemoteTitle")}
         </h1>
@@ -134,7 +134,7 @@ function Welcome({
 
   return (
     <div className="screen welcome-screen">
-      <HermesLogo size={40} />
+      <AideusLogo size={40} />
 
       {error ? (
         <>
@@ -186,7 +186,7 @@ function Welcome({
               onClick={() => setShowRemote(true)}
             >
               <Globe size={16} />
-              Connect to Remote Hermes
+              Connect to Remote Aideus
             </button>
           </div>
         </>

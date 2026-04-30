@@ -7,7 +7,7 @@ const preloadSrc = readFileSync(join(ROOT, "src/preload/index.ts"), "utf-8");
 const preloadTypes = readFileSync(join(ROOT, "src/preload/index.d.ts"), "utf-8");
 
 /**
- * Extract method names from the hermesAPI object in preload/index.ts.
+ * Extract method names from the aideusAPI object in preload/index.ts.
  * Matches lines like `  methodName: (...` or `  methodName: ()`.
  */
 function extractPreloadMethods(src: string): string[] {
@@ -21,13 +21,13 @@ function extractPreloadMethods(src: string): string[] {
 }
 
 /**
- * Extract method names from the HermesAPI interface in index.d.ts.
+ * Extract method names from the AideusAPI interface in index.d.ts.
  */
 function extractTypeMethods(src: string): string[] {
   const methods: string[] = [];
-  // Match lines inside `interface HermesAPI { ... }`
+  // Match lines inside `interface AideusAPI { ... }`
   const interfaceMatch = src.match(
-    /interface\s+HermesAPI\s*\{([\s\S]*?)^\}/m,
+    /interface\s+AideusAPI\s*\{([\s\S]*?)^\}/m,
   );
   if (!interfaceMatch) return [];
   const body = interfaceMatch[1];
@@ -66,10 +66,10 @@ describe("Preload API Surface", () => {
 
 describe("New APIs from v0.8/v0.9 features", () => {
   it("has backup/import APIs", () => {
-    expect(preloadMethods).toContain("runHermesBackup");
-    expect(preloadMethods).toContain("runHermesImport");
-    expect(typeMethods).toContain("runHermesBackup");
-    expect(typeMethods).toContain("runHermesImport");
+    expect(preloadMethods).toContain("runAideusBackup");
+    expect(preloadMethods).toContain("runAideusImport");
+    expect(typeMethods).toContain("runAideusBackup");
+    expect(typeMethods).toContain("runAideusImport");
   });
 
   it("has log viewer API", () => {
@@ -78,8 +78,8 @@ describe("New APIs from v0.8/v0.9 features", () => {
   });
 
   it("has debug dump API", () => {
-    expect(preloadMethods).toContain("runHermesDump");
-    expect(typeMethods).toContain("runHermesDump");
+    expect(preloadMethods).toContain("runAideusDump");
+    expect(typeMethods).toContain("runAideusDump");
   });
 
   it("has MCP server list API", () => {
@@ -101,17 +101,17 @@ describe("Legacy APIs preserved (backward compat)", () => {
     "checkInstall",
     "startInstall",
     "onInstallProgress",
-    // Hermes engine
-    "getHermesVersion",
-    "refreshHermesVersion",
-    "runHermesDoctor",
-    "runHermesUpdate",
+    // Aideus engine
+    "getAideusVersion",
+    "refreshAideusVersion",
+    "runAideusDoctor",
+    "runAideusUpdate",
     // Config
     "getEnv",
     "setEnv",
     "getConfig",
     "setConfig",
-    "getHermesHome",
+    "getAideusHome",
     "getModelConfig",
     "setModelConfig",
     // Chat

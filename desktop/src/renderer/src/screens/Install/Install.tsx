@@ -30,11 +30,11 @@ function Install({ onComplete, onFailed }: InstallProps): React.JSX.Element {
   const logRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const cleanup = window.hermesAPI.onInstallProgress((p) => {
+    const cleanup = window.aideusAPI.onInstallProgress((p) => {
       setProgress(p);
     });
 
-    window.hermesAPI
+    window.aideusAPI
       .startInstall()
       .then((result) => {
         if (result.success) {
@@ -75,7 +75,7 @@ function Install({ onComplete, onFailed }: InstallProps): React.JSX.Element {
           ? t("install.installationComplete")
           : failed
             ? t("install.installationFailed")
-            : t("install.installingHermes")}
+            : t("install.installingAideus")}
       </h1>
 
       <div className="install-progress-container">

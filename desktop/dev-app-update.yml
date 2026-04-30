@@ -1,4 +1,4 @@
 provider: github
 owner: fathah
-repo: hermes-desktop
-updaterCacheDirName: hermes-desktop-updater
+repo: aideus-desktop
+updaterCacheDirName: aideus-desktop-updater

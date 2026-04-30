@@ -2,7 +2,7 @@ import { existsSync } from "fs";
 import { readFile } from "fs/promises";
 import { join } from "path";
 import { execFile } from "child_process";
-import { HERMES_HOME, HERMES_PYTHON, HERMES_SCRIPT } from "./installer";
+import { AIDEUS_HOME, AIDEUS_PYTHON, AIDEUS_SCRIPT } from "./installer";
 import { profileHome } from "./utils";
 
 export interface CronJob {
@@ -82,13 +82,13 @@ export async function listCronJobs(
 }
 
 /**
- * Run a hermes cron CLI command and return the result.
+ * Run a aideus cron CLI command and return the result.
  */
 function runCronCommand(
   args: string[],
   profile?: string,
 ): Promise<{ success: boolean; output: string; error?: string }> {
-  const cliArgs = [HERMES_SCRIPT];
+  const cliArgs = [AIDEUS_SCRIPT];
   if (profile && profile !== "default") {
     cliArgs.push("-p", profile);
   }
@@ -96,9 +96,9 @@ function runCronCommand(
 
   return new Promise((resolve) => {
     execFile(
-      HERMES_PYTHON,
+      AIDEUS_PYTHON,
       cliArgs,
-      { cwd: join(HERMES_HOME, "hermes-agent"), timeout: 15000 },
+      { cwd: join(AIDEUS_HOME, "aideus-agent"), timeout: 15000 },
       (err, stdout, stderr) => {
         if (err) {
           resolve({

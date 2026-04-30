@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { electronAPI } from "@electron-toolkit/preload";
 
-const hermesAPI = {
+const aideusAPI = {
   // Installation
   checkInstall: (): Promise<{
     installed: boolean;
@@ -38,15 +38,15 @@ const hermesAPI = {
     return () => ipcRenderer.removeListener("install-progress", handler);
   },
 
-  // Hermes engine info
-  getHermesVersion: (): Promise<string | null> =>
-    ipcRenderer.invoke("get-hermes-version"),
-  refreshHermesVersion: (): Promise<string | null> =>
-    ipcRenderer.invoke("refresh-hermes-version"),
-  runHermesDoctor: (): Promise<string> =>
-    ipcRenderer.invoke("run-hermes-doctor"),
-  runHermesUpdate: (): Promise<{ success: boolean; error?: string }> =>
-    ipcRenderer.invoke("run-hermes-update"),
+  // Aideus engine info
+  getAideusVersion: (): Promise<string | null> =>
+    ipcRenderer.invoke("get-aideus-version"),
+  refreshAideusVersion: (): Promise<string | null> =>
+    ipcRenderer.invoke("refresh-aideus-version"),
+  runAideusDoctor: (): Promise<string> =>
+    ipcRenderer.invoke("run-aideus-doctor"),
+  runAideusUpdate: (): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke("run-aideus-update"),
 
   // OpenClaw migration
   checkOpenClaw: (): Promise<{ found: boolean; path: string | null }> =>
@@ -71,8 +71,8 @@ const hermesAPI = {
   setConfig: (key: string, value: string, profile?: string): Promise<boolean> =>
     ipcRenderer.invoke("set-config", key, value, profile),
 
-  getHermesHome: (profile?: string): Promise<string> =>
-    ipcRenderer.invoke("get-hermes-home", profile),
+  getAideusHome: (profile?: string): Promise<string> =>
+    ipcRenderer.invoke("get-aideus-home", profile),
 
   getModelConfig: (
     profile?: string,
@@ -590,19 +590,19 @@ const hermesAPI = {
     ipcRenderer.invoke("open-external", url),
 
   // Backup / Import
-  runHermesBackup: (
+  runAideusBackup: (
     profile?: string,
   ): Promise<{ success: boolean; path?: string; error?: string }> =>
-    ipcRenderer.invoke("run-hermes-backup", profile),
+    ipcRenderer.invoke("run-aideus-backup", profile),
 
-  runHermesImport: (
+  runAideusImport: (
     archivePath: string,
     profile?: string,
   ): Promise<{ success: boolean; error?: string }> =>
-    ipcRenderer.invoke("run-hermes-import", archivePath, profile),
+    ipcRenderer.invoke("run-aideus-import", archivePath, profile),
 
   // Debug dump
-  runHermesDump: (): Promise<string> => ipcRenderer.invoke("run-hermes-dump"),
+  runAideusDump: (): Promise<string> => ipcRenderer.invoke("run-aideus-dump"),
 
   // Memory providers
   discoverMemoryProviders: (
@@ -635,7 +635,7 @@ const hermesAPI = {
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld("electron", electronAPI);
-    contextBridge.exposeInMainWorld("hermesAPI", hermesAPI);
+    contextBridge.exposeInMainWorld("aideusAPI", aideusAPI);
   } catch (error) {
     console.error(error);
   }
@@ -643,5 +643,5 @@ if (process.contextIsolated) {
   // @ts-ignore (define in dts)
   window.electron = electronAPI;
   // @ts-ignore (define in dts)
-  window.hermesAPI = hermesAPI;
+  window.aideusAPI = aideusAPI;
 }

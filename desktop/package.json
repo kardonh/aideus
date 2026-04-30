@@ -1,10 +1,18 @@
 {
-  "name": "hermes-desktop",
+  "name": "aideus-desktop",
   "version": "0.2.3",
-  "description": "Hermes Agent Desktop — self-improving AI assistant",
+  "description": "Aideus Agent Desktop — self-improving AI assistant",
   "main": "./out/main/index.js",
-  "author": "fathah",
-  "homepage": "https://github.com/fathah/hermes-desktop",
+  "author": "kardonh",
+  "contributors": [
+    "fathah (original author of hermes-desktop, MIT)"
+  ],
+  "homepage": "https://github.com/Kardonh/aideus/tree/main/desktop",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kardonh/aideus.git",
+    "directory": "desktop"
+  },
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",

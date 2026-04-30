@@ -118,10 +118,10 @@ const SLASH_COMMANDS: SlashCommand[] = [
   },
   { name: "/memory", description: "Show agent memory", category: "info" },
   { name: "/persona", description: "Show current persona", category: "info" },
-  { name: "/version", description: "Show Hermes version", category: "info" },
+  { name: "/version", description: "Show Aideus version", category: "info" },
 ];
 
-function HermesAvatar({ size = 30 }: { size?: number }): React.JSX.Element {
+function AideusAvatar({ size = 30 }: { size?: number }): React.JSX.Element {
   return (
     <div className="chat-avatar chat-avatar-agent">
       <img src={icon} width={size} height={size} alt="" />
@@ -155,7 +155,7 @@ const MessageRow = memo(function MessageRow({
       {msg.role === "user" ? (
         <div className="chat-avatar chat-avatar-user">U</div>
       ) : (
-        <HermesAvatar />
+        <AideusAvatar />
       )}
       <div className={`chat-bubble chat-bubble-${msg.role}`}>
         {msg.role === "agent" ? (
@@ -219,7 +219,7 @@ function Chat({
   const { t } = useI18n();
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [hermesSessionId, setHermesSessionId] = useState<string | null>(null);
+  const [aideusSessionId, setAideusSessionId] = useState<string | null>(null);
   const [toolProgress, setToolProgress] = useState<string | null>(null);
   const [usage, setUsage] = useState<{
     promptTokens: number;
@@ -281,17 +281,17 @@ function Chat({
     return () => container.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Reset hermes session when messages are cleared (new chat)
+  // Reset aideus session when messages are cleared (new chat)
   useEffect(() => {
     if (messages.length === 0) {
-      setHermesSessionId(null);
+      setAideusSessionId(null);
     }
   }, [messages]);
 
   const loadModelConfig = useCallback(async (): Promise<void> => {
     const [mc, savedModels] = await Promise.all([
-      window.hermesAPI.getModelConfig(profile),
-      window.hermesAPI.listModels(),
+      window.aideusAPI.getModelConfig(profile),
+      window.aideusAPI.listModels(),
     ]);
     setCurrentModel(mc.model);
     setCurrentProvider(mc.provider);
@@ -324,7 +324,7 @@ function Chat({
 
   // Load fast mode state from config
   useEffect(() => {
-    window.hermesAPI.getConfig("agent.service_tier", profile).then((val) => {
+    window.aideusAPI.getConfig("agent.service_tier", profile).then((val) => {
       setFastMode(val === "fast" || val === "priority");
     });
   }, [profile]);
@@ -370,7 +370,7 @@ function Chat({
     model: string,
     baseUrl: string,
   ): Promise<void> {
-    await window.hermesAPI.setModelConfig(provider, model, baseUrl, profile);
+    await window.aideusAPI.setModelConfig(provider, model, baseUrl, profile);
     setCurrentModel(model);
     setCurrentProvider(provider);
     setCurrentBaseUrl(baseUrl);
@@ -390,7 +390,7 @@ function Chat({
 
   // IPC listeners — stable callback refs, registered once
   useEffect(() => {
-    const cleanupChunk = window.hermesAPI.onChatChunk((chunk) => {
+    const cleanupChunk = window.aideusAPI.onChatChunk((chunk) => {
       setMessages((prev) => {
         const last = prev[prev.length - 1];
         // Append to existing agent message
@@ -409,13 +409,13 @@ function Chat({
       });
     });
 
-    const cleanupDone = window.hermesAPI.onChatDone((sessionId) => {
-      if (sessionId) setHermesSessionId(sessionId);
+    const cleanupDone = window.aideusAPI.onChatDone((sessionId) => {
+      if (sessionId) setAideusSessionId(sessionId);
       setToolProgress(null);
       setIsLoading(false);
     });
 
-    const cleanupError = window.hermesAPI.onChatError((error) => {
+    const cleanupError = window.aideusAPI.onChatError((error) => {
       setMessages((prev) => [
         ...prev,
         {
@@ -428,11 +428,11 @@ function Chat({
       setIsLoading(false);
     });
 
-    const cleanupToolProgress = window.hermesAPI.onChatToolProgress((tool) => {
+    const cleanupToolProgress = window.aideusAPI.onChatToolProgress((tool) => {
       setToolProgress(tool);
     });
 
-    const cleanupUsage = window.hermesAPI.onChatUsage((u) => {
+    const cleanupUsage = window.aideusAPI.onChatUsage((u) => {
       setUsage((prev) => ({
         promptTokens: (prev?.promptTokens || 0) + u.promptTokens,
         completionTokens: (prev?.completionTokens || 0) + u.completionTokens,
@@ -524,10 +524,10 @@ function Chat({
     onSessionStarted?.();
 
     try {
-      await window.hermesAPI.sendMessage(
+      await window.aideusAPI.sendMessage(
         text,
         profile,
-        hermesSessionId || undefined,
+        aideusSessionId || undefined,
         messages.map((m) => ({ role: m.role, content: m.content })),
       );
     } catch {
@@ -547,10 +547,10 @@ function Chat({
       { id: `user-btw-${Date.now()}`, role: "user", content: `💭 ${text}` },
     ]);
     try {
-      await window.hermesAPI.sendMessage(
+      await window.aideusAPI.sendMessage(
         `/btw ${text}`,
         profile,
-        hermesSessionId || undefined,
+        aideusSessionId || undefined,
         messages.map((m) => ({ role: m.role, content: m.content })),
       );
     } catch {
@@ -641,7 +641,7 @@ function Chat({
         return true;
 
       case "/model": {
-        const mc = await window.hermesAPI.getModelConfig(profile);
+        const mc = await window.aideusAPI.getModelConfig(profile);
         const display = mc.model || "Not set";
         const prov = mc.provider || "auto";
         pushLocalResponse(
@@ -651,7 +651,7 @@ function Chat({
       }
 
       case "/memory": {
-        const mem = await window.hermesAPI.readMemory(profile);
+        const mem = await window.aideusAPI.readMemory(profile);
         const lines: string[] = ["**Agent Memory**\n"];
         if (mem.memory.exists && mem.memory.content.trim()) {
           lines.push(mem.memory.content.trim());
@@ -666,7 +666,7 @@ function Chat({
       }
 
       case "/tools": {
-        const tools = await window.hermesAPI.getToolsets(profile);
+        const tools = await window.aideusAPI.getToolsets(profile);
         if (!tools.length) {
           pushLocalResponse(t("memory.noToolsetsFound"));
         } else {
@@ -682,7 +682,7 @@ function Chat({
       }
 
       case "/skills": {
-        const skills = await window.hermesAPI.listInstalledSkills(profile);
+        const skills = await window.aideusAPI.listInstalledSkills(profile);
         if (!skills.length) {
           pushLocalResponse("No skills installed.");
         } else {
@@ -695,7 +695,7 @@ function Chat({
       }
 
       case "/persona": {
-        const soul = await window.hermesAPI.readSoul(profile);
+        const soul = await window.aideusAPI.readSoul(profile);
         pushLocalResponse(
           soul.trim()
             ? `**Current Persona**\n\n${soul.trim()}`
@@ -705,25 +705,25 @@ function Chat({
       }
 
       case "/version": {
-        const [hermesVer, appVer] = await Promise.all([
-          window.hermesAPI.getHermesVersion(),
-          window.hermesAPI.getAppVersion(),
+        const [aideusVer, appVer] = await Promise.all([
+          window.aideusAPI.getAideusVersion(),
+          window.aideusAPI.getAppVersion(),
         ]);
         pushLocalResponse(
-          `**Hermes Agent:** ${hermesVer || "unknown"}\n**Desktop App:** v${appVer}`,
+          `**Aideus Agent:** ${aideusVer || "unknown"}\n**Desktop App:** v${appVer}`,
         );
         return true;
       }
 
       case "/fast": {
-        const current = await window.hermesAPI.getConfig(
+        const current = await window.aideusAPI.getConfig(
           "agent.service_tier",
           profile,
         );
         const isOn = current === "fast" || current === "priority";
         const next = !isOn;
         setFastMode(next);
-        await window.hermesAPI.setConfig(
+        await window.aideusAPI.setConfig(
           "agent.service_tier",
           next ? "fast" : "normal",
           profile,
@@ -805,7 +805,7 @@ function Chat({
   }
 
   function handleAbort(): void {
-    window.hermesAPI.abortChat();
+    window.aideusAPI.abortChat();
     setIsLoading(false);
     // Refocus input after aborting
     setTimeout(() => inputRef.current?.focus(), 50);
@@ -814,11 +814,11 @@ function Chat({
   function handleClear(): void {
     // Abort any in-flight request before clearing
     if (isLoading) {
-      window.hermesAPI.abortChat();
+      window.aideusAPI.abortChat();
       setIsLoading(false);
     }
     setMessages([]);
-    setHermesSessionId(null);
+    setAideusSessionId(null);
     setUsage(null);
     setToolProgress(null);
   }
@@ -831,10 +831,10 @@ function Chat({
       { id: `user-approve-${Date.now()}`, role: "user", content: "/approve" },
     ]);
     const history = messages.map((m) => ({ role: m.role, content: m.content }));
-    window.hermesAPI
-      .sendMessage("/approve", profile, hermesSessionId || undefined, history)
+    window.aideusAPI
+      .sendMessage("/approve", profile, aideusSessionId || undefined, history)
       .catch(() => setIsLoading(false));
-  }, [profile, hermesSessionId, setMessages, messages]);
+  }, [profile, aideusSessionId, setMessages, messages]);
 
   const handleDeny = useCallback(() => {
     setInput("");
@@ -844,10 +844,10 @@ function Chat({
       { id: `user-deny-${Date.now()}`, role: "user", content: "/deny" },
     ]);
     const history = messages.map((m) => ({ role: m.role, content: m.content }));
-    window.hermesAPI
-      .sendMessage("/deny", profile, hermesSessionId || undefined, history)
+    window.aideusAPI
+      .sendMessage("/deny", profile, aideusSessionId || undefined, history)
       .catch(() => setIsLoading(false));
-  }, [profile, hermesSessionId, setMessages, messages]);
+  }, [profile, aideusSessionId, setMessages, messages]);
 
   const visibleMessages = useMemo(
     () => messages.filter((m) => m.content.trim()),
@@ -897,7 +897,7 @@ function Chat({
               onClick={async () => {
                 const next = !fastMode;
                 setFastMode(next);
-                await window.hermesAPI.setConfig(
+                await window.aideusAPI.setConfig(
                   "agent.service_tier",
                   next ? "fast" : "normal",
                   profile,
@@ -1026,7 +1026,7 @@ function Chat({
 
         {isLoading && !lastMessageIsAgent && (
           <div className="chat-message chat-message-agent">
-            <HermesAvatar />
+            <AideusAvatar />
             <div className="chat-bubble chat-bubble-agent">
               {toolProgress ? (
                 <div className="chat-tool-progress">{toolProgress}</div>
@@ -1094,7 +1094,7 @@ function Chat({
             </button>
           ) : (
             <>
-              {input.trim() && hermesSessionId && (
+              {input.trim() && aideusSessionId && (
                 <button
                   className="chat-btw-btn"
                   onClick={handleQuickAsk}

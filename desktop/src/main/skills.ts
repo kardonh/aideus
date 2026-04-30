@@ -3,10 +3,10 @@ import { existsSync, readdirSync, readFileSync, statSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import {
-  HERMES_HOME,
-  HERMES_PYTHON,
-  HERMES_SCRIPT,
-  HERMES_REPO,
+  AIDEUS_HOME,
+  AIDEUS_PYTHON,
+  AIDEUS_SCRIPT,
+  AIDEUS_REPO,
   getEnhancedPath,
 } from "./installer";
 import { profileHome } from "./utils";
@@ -131,20 +131,20 @@ export function getSkillContent(skillPath: string): string {
 }
 
 /**
- * Search the skill registry via the hermes CLI.
+ * Search the skill registry via the aideus CLI.
  */
 export function searchSkills(query: string): SkillSearchResult[] {
   try {
     const output = execFileSync(
-      HERMES_PYTHON,
-      [HERMES_SCRIPT, "skills", "browse", "--query", query, "--json"],
+      AIDEUS_PYTHON,
+      [AIDEUS_SCRIPT, "skills", "browse", "--query", query, "--json"],
       {
-        cwd: HERMES_REPO,
+        cwd: AIDEUS_REPO,
         env: {
           ...process.env,
           PATH: getEnhancedPath(),
           HOME: homedir(),
-          HERMES_HOME,
+          AIDEUS_HOME,
         },
         stdio: ["ignore", "pipe", "pipe"],
         timeout: 30000,
@@ -178,10 +178,10 @@ export function searchSkills(query: string): SkillSearchResult[] {
 }
 
 /**
- * List bundled skills from the hermes-agent repo.
+ * List bundled skills from the aideus-agent repo.
  */
 export function listBundledSkills(): SkillSearchResult[] {
-  const bundledDir = join(HERMES_REPO, "skills");
+  const bundledDir = join(AIDEUS_REPO, "skills");
   if (!existsSync(bundledDir)) return [];
 
   const skills: SkillSearchResult[] = [];
@@ -238,18 +238,18 @@ export function installSkill(
   profile?: string,
 ): { success: boolean; error?: string } {
   try {
-    const args = [HERMES_SCRIPT, "skills", "install", identifier, "--yes"];
+    const args = [AIDEUS_SCRIPT, "skills", "install", identifier, "--yes"];
     if (profile && profile !== "default") {
       args.splice(1, 0, "-p", profile);
     }
 
-    execFileSync(HERMES_PYTHON, args, {
-      cwd: HERMES_REPO,
+    execFileSync(AIDEUS_PYTHON, args, {
+      cwd: AIDEUS_REPO,
       env: {
         ...process.env,
         PATH: getEnhancedPath(),
         HOME: homedir(),
-        HERMES_HOME,
+        AIDEUS_HOME,
       },
       stdio: "pipe",
       timeout: 60000,
@@ -267,18 +267,18 @@ export function uninstallSkill(
   profile?: string,
 ): { success: boolean; error?: string } {
   try {
-    const args = [HERMES_SCRIPT, "skills", "uninstall", name, "--yes"];
+    const args = [AIDEUS_SCRIPT, "skills", "uninstall", name, "--yes"];
     if (profile && profile !== "default") {
       args.splice(1, 0, "-p", profile);
     }
 
-    execFileSync(HERMES_PYTHON, args, {
-      cwd: HERMES_REPO,
+    execFileSync(AIDEUS_PYTHON, args, {
+      cwd: AIDEUS_REPO,
       env: {
         ...process.env,
         PATH: getEnhancedPath(),
         HOME: homedir(),
-        HERMES_HOME,
+        AIDEUS_HOME,
       },
       stdio: "pipe",
       timeout: 30000,

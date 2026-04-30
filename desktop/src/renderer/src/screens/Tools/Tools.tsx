@@ -265,8 +265,8 @@ function Tools({ profile }: ToolsProps): React.JSX.Element {
   const loadToolsets = useCallback(async (): Promise<void> => {
     setLoading(true);
     const [list, mcp] = await Promise.all([
-      window.hermesAPI.getToolsets(profile),
-      window.hermesAPI.listMcpServers(profile),
+      window.aideusAPI.getToolsets(profile),
+      window.aideusAPI.listMcpServers(profile),
     ]);
     setToolsets(list);
     setMcpServers(mcp);
@@ -284,7 +284,7 @@ function Tools({ profile }: ToolsProps): React.JSX.Element {
     setToolsets((prev) =>
       prev.map((t) => (t.key === key ? { ...t, enabled: !currentEnabled } : t)),
     );
-    await window.hermesAPI.setToolsetEnabled(key, !currentEnabled, profile);
+    await window.aideusAPI.setToolsetEnabled(key, !currentEnabled, profile);
   }
 
   if (loading) {

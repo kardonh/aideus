@@ -143,7 +143,7 @@ export const THEME_OPTIONS = [
   { value: "dark" as const, label: "constants.themeDark" },
 ];
 
-export const THEME_STORAGE_KEY = "hermes-theme";
+export const THEME_STORAGE_KEY = "aideus-theme";
 
 // ── Settings API Key Sections ───────────────────────────
 
@@ -658,7 +658,7 @@ export const GATEWAY_PLATFORMS: PlatformDef[] = [
 // ── Install ─────────────────────────────────────────────
 
 export const INSTALL_CMD =
-  "curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash";
+  "curl -fsSL https://raw.githubusercontent.com/Kardonh/aideus/main/scripts/install.sh | bash";
 
 // Helper to resolve i18n key or return as-is
 export function tk(t: (key: string) => string, value: string): string {

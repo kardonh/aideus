@@ -59,10 +59,10 @@ describe("IPC Handler ↔ Preload Consistency", () => {
 
 describe("New IPC handlers from v0.8/v0.9 features", () => {
   const newChannels = [
-    "run-hermes-backup",
-    "run-hermes-import",
+    "run-aideus-backup",
+    "run-aideus-import",
     "read-logs",
-    "run-hermes-dump",
+    "run-aideus-dump",
     "list-mcp-servers",
     "discover-memory-providers",
   ];
@@ -84,9 +84,9 @@ describe("Legacy IPC handlers preserved", () => {
   const legacyChannels = [
     "check-install",
     "start-install",
-    "get-hermes-version",
-    "run-hermes-doctor",
-    "run-hermes-update",
+    "get-aideus-version",
+    "run-aideus-doctor",
+    "run-aideus-update",
     "get-env",
     "set-env",
     "get-config",

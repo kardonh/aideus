@@ -20,11 +20,11 @@ function App(): React.JSX.Element {
 
   const runInstallCheck = useCallback(async () => {
     try {
-      const conn = await window.hermesAPI.getConnectionConfig();
+      const conn = await window.aideusAPI.getConnectionConfig();
 
       // Remote mode: verify the remote server is reachable
       if (conn.mode === "remote" && conn.remoteUrl) {
-        const ok = await window.hermesAPI.testRemoteConnection(
+        const ok = await window.aideusAPI.testRemoteConnection(
           conn.remoteUrl,
           conn.apiKey,
         );
@@ -32,7 +32,7 @@ function App(): React.JSX.Element {
           setNextScreen("main");
         } else {
           setInstallError(
-            `Cannot reach remote Hermes at ${conn.remoteUrl}. Check the URL or switch to local mode.`,
+            `Cannot reach remote Aideus at ${conn.remoteUrl}. Check the URL or switch to local mode.`,
           );
           setNextScreen("welcome");
         }
@@ -40,7 +40,7 @@ function App(): React.JSX.Element {
       }
 
       // Local mode: normal install check
-      const status = await window.hermesAPI.checkInstall();
+      const status = await window.aideusAPI.checkInstall();
       if (!status.installed) {
         setNextScreen("welcome");
       } else if (!status.verified) {

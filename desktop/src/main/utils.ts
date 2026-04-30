@@ -1,10 +1,10 @@
 import { join, dirname } from "path";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
-import { HERMES_HOME } from "./installer";
+import { AIDEUS_HOME } from "./installer";
 
 /**
  * Strip ANSI escape codes from terminal output.
- * Used by hermes.ts, claw3d.ts, and installer.ts when processing
+ * Used by aideus.ts, claw3d.ts, and installer.ts when processing
  * child process output for display in the renderer.
  */
 // eslint-disable-next-line no-control-regex
@@ -16,13 +16,13 @@ export function stripAnsi(str: string): string {
 
 /**
  * Resolve the home directory for a given profile.
- * 'default' or undefined maps to ~/.hermes; named profiles
- * live under ~/.hermes/profiles/<name>.
+ * 'default' or undefined maps to ~/.aideus; named profiles
+ * live under ~/.aideus/profiles/<name>.
  */
 export function profileHome(profile?: string): string {
   return profile && profile !== "default"
-    ? join(HERMES_HOME, "profiles", profile)
-    : HERMES_HOME;
+    ? join(AIDEUS_HOME, "profiles", profile)
+    : AIDEUS_HOME;
 }
 
 /**
@@ -35,7 +35,7 @@ export function escapeRegex(str: string): string {
 
 /**
  * Write a file, creating parent directories if they don't exist.
- * Prevents ENOENT crashes when ~/.hermes has been deleted or doesn't exist yet.
+ * Prevents ENOENT crashes when ~/.aideus has been deleted or doesn't exist yet.
  */
 export function safeWriteFile(filePath: string, content: string): void {
   const dir = dirname(filePath);

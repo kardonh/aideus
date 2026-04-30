@@ -163,12 +163,12 @@ function Sessions({
 
   const loadSessions = useCallback(async (): Promise<void> => {
     setLoading(true);
-    const cached = await window.hermesAPI.listCachedSessions(50);
+    const cached = await window.aideusAPI.listCachedSessions(50);
     if (cached.length > 0) {
       setSessions(cached);
       setLoading(false);
     }
-    const synced = await window.hermesAPI.syncSessionCache();
+    const synced = await window.aideusAPI.syncSessionCache();
     setSessions(synced.slice(0, 50));
     setLoading(false);
   }, []);
@@ -186,7 +186,7 @@ function Sessions({
     }
     setIsSearching(true);
     searchTimer.current = setTimeout(async () => {
-      const results = await window.hermesAPI.searchSessions(searchQuery);
+      const results = await window.aideusAPI.searchSessions(searchQuery);
       setSearchResults(results);
       setIsSearching(false);
     }, 300);

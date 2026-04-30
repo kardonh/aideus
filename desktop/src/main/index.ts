@@ -13,15 +13,15 @@ import icon from "../../resources/icon.png?asset";
 import {
   checkInstallStatus,
   runInstall,
-  getHermesVersion,
+  getAideusVersion,
   clearVersionCache,
-  runHermesDoctor,
-  runHermesUpdate,
+  runAideusDoctor,
+  runAideusUpdate,
   checkOpenClawExists,
   runClawMigrate,
-  runHermesBackup,
-  runHermesImport,
-  runHermesDump,
+  runAideusBackup,
+  runAideusImport,
+  runAideusDump,
   listMcpServers,
   discoverMemoryProviders,
   readLogs,
@@ -36,7 +36,7 @@ import {
   testRemoteConnection,
   stopHealthPolling,
   restartGateway,
-} from "./hermes";
+} from "./aideus";
 import {
   getClaw3dStatus,
   setupClaw3d,
@@ -58,7 +58,7 @@ import {
   setEnvValue,
   getConfigValue,
   setConfigValue,
-  getHermesHome,
+  getAideusHome,
   getModelConfig,
   setModelConfig,
   getCredentialPool,
@@ -195,16 +195,16 @@ function setupIPC(): void {
     }
   });
 
-  // Hermes engine info
-  ipcMain.handle("get-hermes-version", async () => getHermesVersion());
-  ipcMain.handle("refresh-hermes-version", async () => {
+  // Aideus engine info
+  ipcMain.handle("get-aideus-version", async () => getAideusVersion());
+  ipcMain.handle("refresh-aideus-version", async () => {
     clearVersionCache();
-    return getHermesVersion();
+    return getAideusVersion();
   });
-  ipcMain.handle("run-hermes-doctor", () => runHermesDoctor());
-  ipcMain.handle("run-hermes-update", async (event) => {
+  ipcMain.handle("run-aideus-doctor", () => runAideusDoctor());
+  ipcMain.handle("run-aideus-update", async (event) => {
     try {
-      await runHermesUpdate((progress: InstallProgress) => {
+      await runAideusUpdate((progress: InstallProgress) => {
         event.sender.send("install-progress", progress);
       });
       return { success: true };
@@ -262,8 +262,8 @@ function setupIPC(): void {
     },
   );
 
-  ipcMain.handle("get-hermes-home", (_event, profile?: string) =>
-    getHermesHome(profile),
+  ipcMain.handle("get-aideus-home", (_event, profile?: string) =>
+    getAideusHome(profile),
   );
 
   ipcMain.handle("get-model-config", (_event, profile?: string) =>
@@ -370,7 +370,7 @@ function setupIPC(): void {
                 .trim()
                 .slice(0, 80);
               new Notification({
-                title: "Hermes Agent",
+                title: "Aideus Agent",
                 body: preview || "Response ready",
               }).show();
             }
@@ -382,7 +382,7 @@ function setupIPC(): void {
             // Notify on error too if window not focused
             if (mainWindow && !mainWindow.isFocused()) {
               new Notification({
-                title: "Hermes Agent — Error",
+                title: "Aideus Agent — Error",
                 body: error.slice(0, 100),
               }).show();
             }
@@ -645,17 +645,17 @@ function setupIPC(): void {
   });
 
   // Backup / Import
-  ipcMain.handle("run-hermes-backup", (_event, profile?: string) =>
-    runHermesBackup(profile),
+  ipcMain.handle("run-aideus-backup", (_event, profile?: string) =>
+    runAideusBackup(profile),
   );
   ipcMain.handle(
-    "run-hermes-import",
+    "run-aideus-import",
     (_event, archivePath: string, profile?: string) =>
-      runHermesImport(archivePath, profile),
+      runAideusImport(archivePath, profile),
   );
 
   // Debug dump
-  ipcMain.handle("run-hermes-dump", () => runHermesDump());
+  ipcMain.handle("run-aideus-dump", () => runAideusDump());
 
   // MCP servers
   ipcMain.handle("list-mcp-servers", (_event, profile?: string) =>
@@ -758,15 +758,15 @@ function buildMenu(): void {
       label: "Help",
       submenu: [
         {
-          label: "Hermes Agent on GitHub",
+          label: "Aideus Agent on GitHub",
           click: (): void => {
-            shell.openExternal("https://github.com/fathah/Hermes-Agent");
+            shell.openExternal("https://github.com/fathah/Aideus-Agent");
           },
         },
         {
           label: "Report an Issue",
           click: (): void => {
-            shell.openExternal("https://github.com/fathah/Hermes-Agent/issues");
+            shell.openExternal("https://github.com/fathah/Aideus-Agent/issues");
           },
         },
       ],
@@ -843,8 +843,8 @@ function setupUpdater(): void {
 }
 
 app.whenReady().then(() => {
-  app.name = "Hermes";
-  electronApp.setAppUserModelId("com.nousresearch.hermes");
+  app.name = "Aideus";
+  electronApp.setAppUserModelId("com.kardonh.aideus");
 
   app.on("browser-window-created", (_, window) => {
     optimizer.watchWindowShortcuts(window);

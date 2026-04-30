@@ -12,7 +12,7 @@ import Office from "../Office/Office";
 import Models from "../Models/Models";
 import Schedules from "../Schedules/Schedules";
 import RemoteNotice from "../../components/RemoteNotice";
-import hermeslogo from "../../assets/hermes.png";
+import aideuslogo from "../../assets/aideus.png";
 import {
   ChatBubble,
   Clock,
@@ -73,7 +73,7 @@ function Layout(): React.JSX.Element {
 
   // Re-check remote mode on tab switch (picks up Settings changes)
   useEffect(() => {
-    window.hermesAPI.isRemoteMode().then(setRemoteMode);
+    window.aideusAPI.isRemoteMode().then(setRemoteMode);
   }, [view]);
 
   // Auto-update state
@@ -84,16 +84,16 @@ function Layout(): React.JSX.Element {
   const [downloadPercent, setDownloadPercent] = useState(0);
 
   useEffect(() => {
-    const cleanupAvailable = window.hermesAPI.onUpdateAvailable((info) => {
+    const cleanupAvailable = window.aideusAPI.onUpdateAvailable((info) => {
       setUpdateVersion(info.version);
       setUpdateState("available");
     });
-    const cleanupProgress = window.hermesAPI.onUpdateDownloadProgress(
+    const cleanupProgress = window.aideusAPI.onUpdateDownloadProgress(
       (info) => {
         setDownloadPercent(info.percent);
       },
     );
-    const cleanupDownloaded = window.hermesAPI.onUpdateDownloaded(() => {
+    const cleanupDownloaded = window.aideusAPI.onUpdateDownloaded(() => {
       setUpdateState("ready");
     });
     return () => {
@@ -106,15 +106,15 @@ function Layout(): React.JSX.Element {
   async function handleUpdate(): Promise<void> {
     if (updateState === "available") {
       setUpdateState("downloading");
-      await window.hermesAPI.downloadUpdate();
+      await window.aideusAPI.downloadUpdate();
     } else if (updateState === "ready") {
-      await window.hermesAPI.installUpdate();
+      await window.aideusAPI.installUpdate();
     }
   }
 
   const handleNewChat = useCallback(() => {
     // Abort any in-flight chat before clearing
-    window.hermesAPI.abortChat();
+    window.aideusAPI.abortChat();
     setMessages([]);
     setCurrentSessionId(null);
     setView("chat");
@@ -122,10 +122,10 @@ function Layout(): React.JSX.Element {
 
   // Listen for menu IPC events (Cmd+N, Cmd+K from app menu)
   useEffect(() => {
-    const cleanupNewChat = window.hermesAPI.onMenuNewChat(() => {
+    const cleanupNewChat = window.aideusAPI.onMenuNewChat(() => {
       handleNewChat();
     });
-    const cleanupSearch = window.hermesAPI.onMenuSearchSessions(() => {
+    const cleanupSearch = window.aideusAPI.onMenuSearchSessions(() => {
       setView("sessions");
     });
     return () => {
@@ -141,7 +141,7 @@ function Layout(): React.JSX.Element {
   }, []);
 
   const handleResumeSession = useCallback(async (sessionId: string) => {
-    const dbMessages = await window.hermesAPI.getSessionMessages(sessionId);
+    const dbMessages = await window.aideusAPI.getSessionMessages(sessionId);
     const chatMessages: ChatMessage[] = dbMessages.map((m) => ({
       id: `db-${m.id}`,
       role: m.role === "user" ? "user" : "agent",
@@ -156,7 +156,7 @@ function Layout(): React.JSX.Element {
     <div className="layout">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <img src={hermeslogo} height={30} alt="" />
+          <img src={aideuslogo} height={30} alt="" />
         </div>
 
         <nav className="sidebar-nav">
