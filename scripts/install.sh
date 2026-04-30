@@ -1272,12 +1272,20 @@ install_node_deps() {
         log_info "Installing browser engine (Playwright Chromium)..."
         case "$DISTRO" in
             ubuntu|debian|raspbian|pop|linuxmint|elementary|zorin|kali|parrot)
-                log_info "Playwright may request sudo to install browser system dependencies (shared libraries)."
-                log_info "This is standard Playwright setup — Aideus itself does not require root access."
-                cd "$INSTALL_DIR" && npx playwright install --with-deps chromium 2>/dev/null || {
-                    log_warn "Playwright browser installation failed — browser tools will not work."
-                    log_warn "Try running manually: cd $INSTALL_DIR && npx playwright install --with-deps chromium"
-                }
+                if [ "${SKIP_SYSTEM_PACKAGES:-false}" = "true" ]; then
+                    log_info "--skip-system-packages set; installing Playwright browser without --with-deps"
+                    log_info "Browser system libs (libnss, libatk, ...) must be installed manually if missing."
+                    cd "$INSTALL_DIR" && npx playwright install chromium 2>/dev/null || {
+                        log_warn "Playwright browser installation failed — browser tools will not work."
+                    }
+                else
+                    log_info "Playwright may request sudo to install browser system dependencies (shared libraries)."
+                    log_info "This is standard Playwright setup — Aideus itself does not require root access."
+                    cd "$INSTALL_DIR" && npx playwright install --with-deps chromium 2>/dev/null || {
+                        log_warn "Playwright browser installation failed — browser tools will not work."
+                        log_warn "Try running manually: cd $INSTALL_DIR && npx playwright install --with-deps chromium"
+                    }
+                fi
                 ;;
             arch|manjaro)
                 if command -v pacman &> /dev/null; then
