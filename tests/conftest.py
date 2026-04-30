@@ -1,17 +1,17 @@
-"""Shared fixtures for the hermes-agent test suite.
+"""Shared fixtures for the aideus-agent test suite.
 
 Hermetic-test invariants enforced here (see AGENTS.md for rationale):
 
 1. **No credential env vars.** All provider/credential-shaped env vars
    (ending in _API_KEY, _TOKEN, _SECRET, _PASSWORD, _CREDENTIALS, etc.)
    are unset before every test. Local developer keys cannot leak in.
-2. **Isolated HERMES_HOME.** HERMES_HOME points to a per-test tempdir so
-   code reading ``~/.hermes/*`` via ``get_hermes_home()`` can't see the
+2. **Isolated AIDEUS_HOME.** AIDEUS_HOME points to a per-test tempdir so
+   code reading ``~/.aideus/*`` via ``get_aideus_home()`` can't see the
    real one. (We do NOT also redirect HOME — that broke subprocesses in
-   CI. Code using ``Path.home() / ".hermes"`` instead of the canonical
-   ``get_hermes_home()`` is a bug to fix at the callsite.)
+   CI. Code using ``Path.home() / ".aideus"`` instead of the canonical
+   ``get_aideus_home()`` is a bug to fix at the callsite.)
 3. **Deterministic runtime.** TZ=UTC, LANG=C.UTF-8, PYTHONHASHSEED=0.
-4. **No HERMES_SESSION_* inheritance** — the agent's current gateway
+4. **No AIDEUS_SESSION_* inheritance** — the agent's current gateway
    session must not leak into tests.
 
 These invariants make the local test run match CI closely. Gaps that
@@ -158,36 +158,36 @@ def _looks_like_credential(name: str) -> bool:
     return any(name.endswith(suf) for suf in _CREDENTIAL_SUFFIXES)
 
 
-# HERMES_* vars that change test behavior by being set. Unset all of these
+# AIDEUS_* vars that change test behavior by being set. Unset all of these
 # unconditionally — individual tests that need them set do so explicitly.
-_HERMES_BEHAVIORAL_VARS = frozenset({
-    "HERMES_YOLO_MODE",
-    "HERMES_INTERACTIVE",
-    "HERMES_QUIET",
-    "HERMES_TOOL_PROGRESS",
-    "HERMES_TOOL_PROGRESS_MODE",
-    "HERMES_MAX_ITERATIONS",
-    "HERMES_SESSION_PLATFORM",
-    "HERMES_SESSION_CHAT_ID",
-    "HERMES_SESSION_CHAT_NAME",
-    "HERMES_SESSION_THREAD_ID",
-    "HERMES_SESSION_SOURCE",
-    "HERMES_SESSION_KEY",
-    "HERMES_GATEWAY_SESSION",
-    "HERMES_PLATFORM",
-    "HERMES_MODEL",
-    "HERMES_INFERENCE_MODEL",
-    "HERMES_INFERENCE_PROVIDER",
-    "HERMES_TUI_PROVIDER",
-    "HERMES_MANAGED",
-    "HERMES_DEV",
-    "HERMES_CONTAINER",
-    "HERMES_EPHEMERAL_SYSTEM_PROMPT",
-    "HERMES_TIMEZONE",
-    "HERMES_REDACT_SECRETS",
-    "HERMES_BACKGROUND_NOTIFICATIONS",
-    "HERMES_EXEC_ASK",
-    "HERMES_HOME_MODE",
+_AIDEUS_BEHAVIORAL_VARS = frozenset({
+    "AIDEUS_YOLO_MODE",
+    "AIDEUS_INTERACTIVE",
+    "AIDEUS_QUIET",
+    "AIDEUS_TOOL_PROGRESS",
+    "AIDEUS_TOOL_PROGRESS_MODE",
+    "AIDEUS_MAX_ITERATIONS",
+    "AIDEUS_SESSION_PLATFORM",
+    "AIDEUS_SESSION_CHAT_ID",
+    "AIDEUS_SESSION_CHAT_NAME",
+    "AIDEUS_SESSION_THREAD_ID",
+    "AIDEUS_SESSION_SOURCE",
+    "AIDEUS_SESSION_KEY",
+    "AIDEUS_GATEWAY_SESSION",
+    "AIDEUS_PLATFORM",
+    "AIDEUS_MODEL",
+    "AIDEUS_INFERENCE_MODEL",
+    "AIDEUS_INFERENCE_PROVIDER",
+    "AIDEUS_TUI_PROVIDER",
+    "AIDEUS_MANAGED",
+    "AIDEUS_DEV",
+    "AIDEUS_CONTAINER",
+    "AIDEUS_EPHEMERAL_SYSTEM_PROMPT",
+    "AIDEUS_TIMEZONE",
+    "AIDEUS_REDACT_SECRETS",
+    "AIDEUS_BACKGROUND_NOTIFICATIONS",
+    "AIDEUS_EXEC_ASK",
+    "AIDEUS_HOME_MODE",
     "TERMINAL_CWD",
     "TERMINAL_ENV",
     "TERMINAL_VERCEL_RUNTIME",
@@ -245,8 +245,8 @@ _HERMES_BEHAVIORAL_VARS = frozenset({
 def _hermetic_environment(tmp_path, monkeypatch):
     """Blank out all credential/behavioral env vars so local and CI match.
 
-    Also redirects HOME and HERMES_HOME to per-test tempdirs so code that
-    reads ``~/.hermes/*`` can't touch the real one, and pins TZ/LANG so
+    Also redirects HOME and AIDEUS_HOME to per-test tempdirs so code that
+    reads ``~/.aideus/*`` can't touch the real one, and pins TZ/LANG so
     datetime/locale-sensitive tests are deterministic.
     """
     # 1. Blank every credential-shaped env var that's currently set.
@@ -254,27 +254,27 @@ def _hermetic_environment(tmp_path, monkeypatch):
         if _looks_like_credential(name):
             monkeypatch.delenv(name, raising=False)
 
-    # 2. Blank behavioral HERMES_* vars that could change test semantics.
-    for name in _HERMES_BEHAVIORAL_VARS:
+    # 2. Blank behavioral AIDEUS_* vars that could change test semantics.
+    for name in _AIDEUS_BEHAVIORAL_VARS:
         monkeypatch.delenv(name, raising=False)
 
-    # 3. Redirect HERMES_HOME to a per-test tempdir. Code that reads
-    #    ``~/.hermes/*`` via ``get_hermes_home()`` now gets the tempdir.
+    # 3. Redirect AIDEUS_HOME to a per-test tempdir. Code that reads
+    #    ``~/.aideus/*`` via ``get_aideus_home()`` now gets the tempdir.
     #
     #    NOTE: We do NOT also redirect HOME. Doing so broke CI because
     #    some tests (and their transitive deps) spawn subprocesses that
     #    inherit HOME and expect it to be stable. If a test genuinely
     #    needs HOME isolated, it should set it explicitly in its own
-    #    fixture. Any code in the codebase reading ``~/.hermes/*`` via
-    #    ``Path.home() / ".hermes"`` instead of ``get_hermes_home()``
+    #    fixture. Any code in the codebase reading ``~/.aideus/*`` via
+    #    ``Path.home() / ".aideus"`` instead of ``get_aideus_home()``
     #    is a bug to fix at the callsite.
-    fake_hermes_home = tmp_path / "hermes_test"
-    fake_hermes_home.mkdir()
-    (fake_hermes_home / "sessions").mkdir()
-    (fake_hermes_home / "cron").mkdir()
-    (fake_hermes_home / "memories").mkdir()
-    (fake_hermes_home / "skills").mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(fake_hermes_home))
+    fake_aideus_home = tmp_path / "aideus_test"
+    fake_aideus_home.mkdir()
+    (fake_aideus_home / "sessions").mkdir()
+    (fake_aideus_home / "cron").mkdir()
+    (fake_aideus_home / "memories").mkdir()
+    (fake_aideus_home / "skills").mkdir()
+    monkeypatch.setenv("AIDEUS_HOME", str(fake_aideus_home))
 
     # 4. Deterministic locale / timezone / hashseed. CI runs in UTC with
     #    C.UTF-8 locale; local dev often doesn't. Pin everything.
@@ -293,10 +293,10 @@ def _hermetic_environment(tmp_path, monkeypatch):
     monkeypatch.setenv("AWS_METADATA_SERVICE_NUM_ATTEMPTS", "1")
 
     # 5. Reset plugin singleton so tests don't leak plugins from
-    #    ~/.hermes/plugins/ (which, per step 3, is now empty — but the
+    #    ~/.aideus/plugins/ (which, per step 3, is now empty — but the
     #    singleton might still be cached from a previous test).
     try:
-        import hermes_cli.plugins as _plugins_mod
+        import aideus_cli.plugins as _plugins_mod
         monkeypatch.setattr(_plugins_mod, "_plugin_manager", None)
     except Exception:
         pass
@@ -309,7 +309,7 @@ def _hermetic_environment(tmp_path, monkeypatch):
 # Backward-compat alias — old tests reference this fixture name. Keep it
 # as a no-op wrapper so imports don't break.
 @pytest.fixture(autouse=True)
-def _isolate_hermes_home(_hermetic_environment):
+def _isolate_aideus_home(_hermetic_environment):
     """Alias preserved for any test that yields this name explicitly."""
     return None
 
@@ -340,7 +340,7 @@ def _reset_module_state():
     """
     # --- logging — quiet/one-shot paths mutate process-global logger state ---
     logging.disable(logging.NOTSET)
-    for _logger_name in ("tools", "run_agent", "trajectory_compressor", "cron", "hermes_cli"):
+    for _logger_name in ("tools", "run_agent", "trajectory_compressor", "cron", "aideus_cli"):
         _logger = logging.getLogger(_logger_name)
         _logger.disabled = False
         _logger.setLevel(logging.NOTSET)
@@ -451,7 +451,7 @@ def tmp_dir(tmp_path):
 
 @pytest.fixture()
 def mock_config():
-    """Return a minimal hermes config dict suitable for unit tests."""
+    """Return a minimal aideus config dict suitable for unit tests."""
     return {
         "model": "test/mock-model",
         "toolsets": ["terminal", "file"],

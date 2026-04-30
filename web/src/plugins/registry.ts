@@ -4,7 +4,7 @@
  * Exposes React, UI components, hooks, and utilities on the window so
  * that plugin bundles can use them without bundling their own copies.
  *
- * Plugins call window.__HERMES_PLUGINS__.register(name, Component)
+ * Plugins call window.__AIDEUS_PLUGINS__.register(name, Component)
  * to register their tab component.
  */
 
@@ -87,8 +87,8 @@ export function getRegisteredCount(): number {
 
 declare global {
   interface Window {
-    __HERMES_PLUGIN_SDK__: unknown;
-    __HERMES_PLUGINS__: {
+    __AIDEUS_PLUGIN_SDK__: unknown;
+    __AIDEUS_PLUGINS__: {
       register: typeof registerPlugin;
       registerSlot: typeof registerSlot;
     };
@@ -96,12 +96,12 @@ declare global {
 }
 
 export function exposePluginSDK() {
-  window.__HERMES_PLUGINS__ = {
+  window.__AIDEUS_PLUGINS__ = {
     register: registerPlugin,
     registerSlot,
   };
 
-  window.__HERMES_PLUGIN_SDK__ = {
+  window.__AIDEUS_PLUGIN_SDK__ = {
     // React core — plugins use these instead of importing react
     React,
     hooks: {
@@ -114,7 +114,7 @@ export function exposePluginSDK() {
       createContext,
     },
 
-    // Hermes API client
+    // Aideus API client
     api,
     // Raw fetchJSON for plugin-specific endpoints
     fetchJSON,

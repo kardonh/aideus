@@ -37,13 +37,13 @@ class TestIRCProtocolHelpers:
         assert msg["params"] == ["#channel", "Hello world"]
 
     def test_parse_numeric_reply(self):
-        msg = _parse_irc_message(":server 001 hermes-bot :Welcome to IRC")
+        msg = _parse_irc_message(":server 001 aideus-bot :Welcome to IRC")
         assert msg["prefix"] == "server"
         assert msg["command"] == "001"
-        assert msg["params"] == ["hermes-bot", "Welcome to IRC"]
+        assert msg["params"] == ["aideus-bot", "Welcome to IRC"]
 
     def test_parse_nick_collision(self):
-        msg = _parse_irc_message(":server 433 * hermes-bot :Nickname is already in use")
+        msg = _parse_irc_message(":server 433 * aideus-bot :Nickname is already in use")
         assert msg["command"] == "433"
 
     def test_extract_nick_full_prefix(self):
@@ -86,8 +86,8 @@ class TestIRCAdapterInit:
             extra={
                 "server": "irc.libera.chat",
                 "port": 6697,
-                "nickname": "hermes",
-                "channel": "#hermes-dev",
+                "nickname": "aideus",
+                "channel": "#aideus-dev",
                 "use_tls": True,
             },
         )
@@ -95,8 +95,8 @@ class TestIRCAdapterInit:
 
         assert adapter.server == "irc.libera.chat"
         assert adapter.port == 6697
-        assert adapter.nickname == "hermes"
-        assert adapter.channel == "#hermes-dev"
+        assert adapter.nickname == "aideus"
+        assert adapter.channel == "#aideus-dev"
         assert adapter.use_tls is True
 
     def test_env_overrides_config(self, monkeypatch):
@@ -179,13 +179,13 @@ class TestIRCAdapterMessageParsing:
             extra={
                 "server": "localhost",
                 "port": 6667,
-                "nickname": "hermes",
+                "nickname": "aideus",
                 "channel": "#test",
                 "use_tls": False,
             },
         )
         a = IRCAdapter(cfg)
-        a._current_nick = "hermes"
+        a._current_nick = "aideus"
         a._registered = True
         return a
 
@@ -206,7 +206,7 @@ class TestIRCAdapterMessageParsing:
         adapter._registered = False
         adapter._registration_event = asyncio.Event()
 
-        await adapter._handle_line(":server 001 hermes :Welcome to IRC")
+        await adapter._handle_line(":server 001 aideus :Welcome to IRC")
         assert adapter._registered is True
         assert adapter._registration_event.is_set()
 
@@ -218,10 +218,10 @@ class TestIRCAdapterMessageParsing:
         writer.drain = AsyncMock()
         adapter._writer = writer
 
-        await adapter._handle_line(":server 433 * hermes :Nickname in use")
-        assert adapter._current_nick == "hermes_"
+        await adapter._handle_line(":server 433 * aideus :Nickname in use")
+        assert adapter._current_nick == "aideus_"
         sent = writer.write.call_args[0][0]
-        assert b"NICK hermes_" in sent
+        assert b"NICK aideus_" in sent
 
     @pytest.mark.asyncio
     async def test_handle_addressed_channel_message(self, adapter):
@@ -238,7 +238,7 @@ class TestIRCAdapterMessageParsing:
 
         adapter._dispatch_message = capture_dispatch
 
-        await adapter._handle_line(":user!u@host PRIVMSG #test :hermes: hello there")
+        await adapter._handle_line(":user!u@host PRIVMSG #test :aideus: hello there")
         assert len(dispatched) == 1
         assert dispatched[0]["text"] == "hello there"
         assert dispatched[0]["chat_id"] == "#test"
@@ -267,7 +267,7 @@ class TestIRCAdapterMessageParsing:
         adapter._dispatch_message = capture_dispatch
         adapter._message_handler = AsyncMock()
 
-        await adapter._handle_line(":user!u@host PRIVMSG hermes :private message")
+        await adapter._handle_line(":user!u@host PRIVMSG aideus :private message")
         assert len(dispatched) == 1
         assert dispatched[0]["text"] == "private message"
         assert dispatched[0]["chat_type"] == "dm"
@@ -283,7 +283,7 @@ class TestIRCAdapterMessageParsing:
         adapter._dispatch_message = capture_dispatch
         adapter._message_handler = AsyncMock()
 
-        await adapter._handle_line(":hermes!bot@host PRIVMSG #test :my own msg")
+        await adapter._handle_line(":aideus!bot@host PRIVMSG #test :my own msg")
         assert len(dispatched) == 0
 
     @pytest.mark.asyncio
@@ -297,7 +297,7 @@ class TestIRCAdapterMessageParsing:
         adapter._dispatch_message = capture_dispatch
         adapter._message_handler = AsyncMock()
 
-        await adapter._handle_line(":user!u@host PRIVMSG hermes :\x01ACTION waves\x01")
+        await adapter._handle_line(":user!u@host PRIVMSG aideus :\x01ACTION waves\x01")
         assert len(dispatched) == 1
         assert dispatched[0]["text"] == "* user waves"
 
@@ -312,14 +312,14 @@ class TestIRCAdapterMessageParsing:
             extra={
                 "server": "localhost",
                 "port": 6667,
-                "nickname": "hermes",
+                "nickname": "aideus",
                 "channel": "#test",
                 "use_tls": False,
                 "allowed_users": ["Admin", "BOB"],
             },
         )
         adapter = IRCAdapter(cfg)
-        adapter._current_nick = "hermes"
+        adapter._current_nick = "aideus"
         adapter._registered = True
         dispatched = []
 
@@ -330,7 +330,7 @@ class TestIRCAdapterMessageParsing:
         adapter._message_handler = AsyncMock()
 
         # "admin" matches "Admin" in allowlist
-        await adapter._handle_line(":admin!u@host PRIVMSG #test :hermes: hello")
+        await adapter._handle_line(":admin!u@host PRIVMSG #test :aideus: hello")
         assert len(dispatched) == 1
         assert dispatched[0]["text"] == "hello"
 
@@ -345,14 +345,14 @@ class TestIRCAdapterMessageParsing:
             extra={
                 "server": "localhost",
                 "port": 6667,
-                "nickname": "hermes",
+                "nickname": "aideus",
                 "channel": "#test",
                 "use_tls": False,
                 "allowed_users": ["Admin", "BOB"],
             },
         )
         adapter = IRCAdapter(cfg)
-        adapter._current_nick = "hermes"
+        adapter._current_nick = "aideus"
         adapter._registered = True
         dispatched = []
 
@@ -362,7 +362,7 @@ class TestIRCAdapterMessageParsing:
         adapter._dispatch_message = capture_dispatch
         adapter._message_handler = AsyncMock()
 
-        await adapter._handle_line(":eve!u@host PRIVMSG #test :hermes: hello")
+        await adapter._handle_line(":eve!u@host PRIVMSG #test :aideus: hello")
         assert len(dispatched) == 0
 
     @pytest.mark.asyncio
@@ -374,12 +374,12 @@ class TestIRCAdapterMessageParsing:
         writer.drain = AsyncMock()
         adapter._writer = writer
 
-        await adapter._handle_line(":server 433 * hermes :Nickname in use")
-        assert adapter._current_nick == "hermes_"
-        await adapter._handle_line(":server 433 * hermes_ :Nickname in use")
-        assert adapter._current_nick == "hermes_1"
-        await adapter._handle_line(":server 433 * hermes_1 :Nickname in use")
-        assert adapter._current_nick == "hermes_2"
+        await adapter._handle_line(":server 433 * aideus :Nickname in use")
+        assert adapter._current_nick == "aideus_"
+        await adapter._handle_line(":server 433 * aideus_ :Nickname in use")
+        assert adapter._current_nick == "aideus_1"
+        await adapter._handle_line(":server 433 * aideus_1 :Nickname in use")
+        assert adapter._current_nick == "aideus_2"
 
 
 class TestIRCAdapterSplitting:

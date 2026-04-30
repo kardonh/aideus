@@ -17,20 +17,20 @@ Delegate coding to OpenAI Codex CLI (features, PRs).
 | Source | Bundled (installed by default) |
 | Path | `skills/autonomous-ai-agents/codex` |
 | Version | `1.0.0` |
-| Author | Hermes Agent |
+| Author | Aideus Agent |
 | License | MIT |
 | Tags | `Coding-Agent`, `Codex`, `OpenAI`, `Code-Review`, `Refactoring` |
-| Related skills | [`claude-code`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-claude-code), [`hermes-agent`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-hermes-agent) |
+| Related skills | [`claude-code`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-claude-code), [`aideus-agent`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-aideus-agent) |
 
 ## Reference: full SKILL.md
 
 :::info
-The following is the complete skill definition that Hermes loads when this skill is triggered. This is what the agent sees as instructions when the skill is active.
+The following is the complete skill definition that Aideus loads when this skill is triggered. This is what the agent sees as instructions when the skill is active.
 :::
 
 # Codex CLI
 
-Delegate coding tasks to [Codex](https://github.com/openai/codex) via the Hermes terminal. Codex is OpenAI's autonomous coding agent CLI.
+Delegate coding tasks to [Codex](https://github.com/openai/codex) via the Aideus terminal. Codex is OpenAI's autonomous coding agent CLI.
 
 ## When to use
 

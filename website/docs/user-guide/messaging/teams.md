@@ -1,12 +1,12 @@
 ---
 sidebar_position: 5
 title: "Microsoft Teams"
-description: "Set up Hermes Agent as a Microsoft Teams bot"
+description: "Set up Aideus Agent as a Microsoft Teams bot"
 ---
 
 # Microsoft Teams Setup
 
-Connect Hermes Agent to Microsoft Teams as a bot. Unlike Slack's Socket Mode, Teams delivers messages by calling a **public HTTPS webhook**, so your instance needs a publicly reachable endpoint — either a dev tunnel (local dev) or a real domain (production).
+Connect Aideus Agent to Microsoft Teams as a bot. Unlike Slack's Socket Mode, Teams delivers messages by calling a **public HTTPS webhook**, so your instance needs a publicly reachable endpoint — either a dev tunnel (local dev) or a real domain (production).
 
 ## How the Bot Responds
 
@@ -14,7 +14,7 @@ Connect Hermes Agent to Microsoft Teams as a bot. Unlike Slack's Socket Mode, Te
 |---------|----------|
 | **Personal chat (DM)** | Bot responds to every message. No @mention needed. |
 | **Group chat** | Bot responds to every message in the chat. |
-| **Channel** | Bot only responds when @mentioned (Teams delivers @mentions as regular messages with `<at>BotName</at>` tags, which Hermes strips automatically). |
+| **Channel** | Bot only responds when @mentioned (Teams delivers @mentions as regular messages with `<at>BotName</at>` tags, which Aideus strips automatically). |
 
 ---
 
@@ -41,9 +41,9 @@ Teams cannot deliver messages to `localhost`. For local development, use any tun
 
 ```bash
 # devtunnel (Microsoft)
-devtunnel create hermes-bot --allow-anonymous
-devtunnel port create hermes-bot -p 3978 --protocol https
-devtunnel host hermes-bot
+devtunnel create aideus-bot --allow-anonymous
+devtunnel port create aideus-bot -p 3978 --protocol https
+devtunnel host aideus-bot
 
 # ngrok
 ngrok http 3978
@@ -62,7 +62,7 @@ For production, point your bot's endpoint at your server's public domain instead
 
 ```bash
 teams app create \
-  --name "Hermes" \
+  --name "Aideus" \
   --endpoint "https://<your-tunnel-url>/api/messages"
 ```
 
@@ -72,7 +72,7 @@ The CLI outputs your `CLIENT_ID`, `CLIENT_SECRET`, and `TENANT_ID`. Save them �
 
 ## Step 4: Configure Environment Variables
 
-Add to `~/.hermes/.env`:
+Add to `~/.aideus/.env`:
 
 ```bash
 # Required
@@ -90,14 +90,14 @@ TEAMS_ALLOWED_USERS=<your-aad-object-id>
 ## Step 5: Start the Gateway
 
 ```bash
-HERMES_UID=$(id -u) HERMES_GID=$(id -g) docker compose up -d gateway
+AIDEUS_UID=$(id -u) AIDEUS_GID=$(id -g) docker compose up -d gateway
 ```
 
 This starts the gateway and maps port 3978 on your host to the container. Check that it's running:
 
 ```bash
 curl http://localhost:3978/health   # should return: ok
-docker logs -f hermes
+docker logs -f aideus
 ```
 
 Look for:
@@ -133,7 +133,7 @@ The `teamsAppId` was printed by `teams app create` in Step 3. After installing, 
 
 ### config.yaml
 
-Alternatively, configure via `~/.hermes/config.yaml`:
+Alternatively, configure via `~/.aideus/config.yaml`:
 
 ```yaml
 platforms:
@@ -169,7 +169,7 @@ For a permanent server, skip devtunnel and register your bot with your server's 
 
 ```bash
 teams app create \
-  --name "Hermes" \
+  --name "Aideus" \
   --endpoint "https://your-domain.com/api/messages"
 ```
 
@@ -190,10 +190,10 @@ Make sure port 3978 (or your configured `TEAMS_PORT`) is reachable from the inte
 | `health` endpoint works but bot doesn't respond | Check that your tunnel is still running and the bot's messaging endpoint matches the tunnel URL |
 | `KeyError: 'teams'` in logs | Restart the container — this is fixed in the current version |
 | Bot responds with auth errors | Verify `TEAMS_CLIENT_ID`, `TEAMS_CLIENT_SECRET`, and `TEAMS_TENANT_ID` are all set correctly |
-| `No inference provider configured` | Check that `ANTHROPIC_API_KEY` (or another provider key) is set in `~/.hermes/.env` |
+| `No inference provider configured` | Check that `ANTHROPIC_API_KEY` (or another provider key) is set in `~/.aideus/.env` |
 | Bot receives messages but ignores them | Your AAD object ID may not be in `TEAMS_ALLOWED_USERS`. Run `teams status --verbose` to find it |
-| Tunnel URL changes on restart | devtunnel URLs are persistent if you use a named tunnel (`devtunnel create hermes-bot`). ngrok and cloudflared generate a new URL each run unless you have a paid plan — update the bot endpoint with `teams app update` when it changes |
-| Teams shows "This bot is not responding" | The webhook returned an error. Check `docker logs hermes` for tracebacks |
+| Tunnel URL changes on restart | devtunnel URLs are persistent if you use a named tunnel (`devtunnel create aideus-bot`). ngrok and cloudflared generate a new URL each run unless you have a paid plan — update the bot endpoint with `teams app update` when it changes |
+| Teams shows "This bot is not responding" | The webhook returned an error. Check `docker logs aideus` for tracebacks |
 | `[teams] Failed to connect` in logs | The SDK failed to authenticate. Double-check your credentials and that the tenant ID matches the account you used in `teams login` |
 
 ---
@@ -206,6 +206,6 @@ Make sure port 3978 (or your configured `TEAMS_PORT`) is reachable from the inte
 Treat `TEAMS_CLIENT_SECRET` like a password — rotate it periodically via the Azure portal or Teams CLI.
 :::
 
-- Store credentials in `~/.hermes/.env` with permissions `600` (`chmod 600 ~/.hermes/.env`)
+- Store credentials in `~/.aideus/.env` with permissions `600` (`chmod 600 ~/.aideus/.env`)
 - The bot only accepts messages from users in `TEAMS_ALLOWED_USERS`; unauthorized messages are silently dropped
 - Your public endpoint (`/api/messages`) is authenticated by the Teams Bot Framework — requests without valid JWTs are rejected

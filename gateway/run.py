@@ -38,7 +38,7 @@ from typing import Dict, Optional, Any, List
 # gateway is a long-running daemon, so its boot cost matters less than
 # preserving the established test-patch surface.
 from agent.account_usage import fetch_account_usage, render_account_usage_lines
-from hermes_cli.config import cfg_get
+from aideus_cli.config import cfg_get
 
 # --- Agent cache tuning ---------------------------------------------------
 # Bounds the per-session AIAgent cache to prevent unbounded growth in
@@ -53,7 +53,7 @@ _PLATFORM_CONNECT_TIMEOUT_SECS_DEFAULT = 30.0
 # after a gateway restart when the user's next message starts new work.
 #
 # The freshness signal is the timestamp of the last transcript row, which
-# ``hermes_state.get_messages`` carries on every persisted message.  This
+# ``aideus_state.get_messages`` carries on every persisted message.  This
 # handles the two auto-continue cases uniformly:
 #   * resume_pending (gateway restart/shutdown watchdog marked the session)
 #   * tool-tail     (last persisted message is a tool result the agent
@@ -85,7 +85,7 @@ def _coerce_gateway_timestamp(value: Any) -> Optional[float]:
     if isinstance(value, bool):  # bool is a subclass of int — skip it
         return None
     if isinstance(value, (int, float)):
-        # Some platform events use milliseconds; Hermes state rows use seconds.
+        # Some platform events use milliseconds; Aideus state rows use seconds.
         return float(value) / 1000.0 if float(value) > 10_000_000_000 else float(value)
     if isinstance(value, str):
         text = value.strip()
@@ -106,14 +106,14 @@ def _coerce_gateway_timestamp(value: Any) -> Optional[float]:
 def _auto_continue_freshness_window() -> float:
     """Return the configured auto-continue freshness window in seconds.
 
-    Reads ``HERMES_AUTO_CONTINUE_FRESHNESS`` (bridged from
+    Reads ``AIDEUS_AUTO_CONTINUE_FRESHNESS`` (bridged from
     ``config.yaml`` ``agent.gateway_auto_continue_freshness`` at gateway
-    startup, same pattern as ``HERMES_AGENT_TIMEOUT``).  Falls back to the
+    startup, same pattern as ``AIDEUS_AGENT_TIMEOUT``).  Falls back to the
     module default when unset or malformed.  Non-positive values disable
     the freshness gate (restores the pre-fix "always fresh" behaviour for
     users who want to opt out).
     """
-    raw = os.environ.get("HERMES_AUTO_CONTINUE_FRESHNESS")
+    raw = os.environ.get("AIDEUS_AUTO_CONTINUE_FRESHNESS")
     if raw is None or raw == "":
         return float(_AUTO_CONTINUE_FRESHNESS_SECS_DEFAULT)
     try:
@@ -222,17 +222,17 @@ _ensure_ssl_certs()
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# Resolve Hermes home directory (respects HERMES_HOME override)
-from hermes_constants import get_hermes_home
+# Resolve Aideus home directory (respects AIDEUS_HOME override)
+from aideus_constants import get_aideus_home
 from utils import atomic_yaml_write, base_url_host_matches, is_truthy_value
-_hermes_home = get_hermes_home()
+_aideus_home = get_aideus_home()
 
-# Load environment variables from ~/.hermes/.env first.
+# Load environment variables from ~/.aideus/.env first.
 # User-managed env files should override stale shell exports on restart.
 from dotenv import load_dotenv  # backward-compat for tests that monkeypatch this symbol
-from hermes_cli.env_loader import load_hermes_dotenv
-_env_path = _hermes_home / '.env'
-load_hermes_dotenv(hermes_home=_hermes_home, project_env=Path(__file__).resolve().parents[1] / '.env')
+from aideus_cli.env_loader import load_aideus_dotenv
+_env_path = _aideus_home / '.env'
+load_aideus_dotenv(aideus_home=_aideus_home, project_env=Path(__file__).resolve().parents[1] / '.env')
 
 
 _DOCKER_VOLUME_SPEC_RE = re.compile(r"^(?P<host>.+):(?P<container>/[^:]+?)(?::(?P<options>[^:]+))?$")
@@ -240,14 +240,14 @@ _DOCKER_MEDIA_OUTPUT_CONTAINER_PATHS = {"/output", "/outputs"}
 
 # Bridge config.yaml values into the environment so os.getenv() picks them up.
 # config.yaml is authoritative for terminal settings — overrides .env.
-_config_path = _hermes_home / 'config.yaml'
+_config_path = _aideus_home / 'config.yaml'
 if _config_path.exists():
     try:
         import yaml as _yaml
         with open(_config_path, encoding="utf-8") as _f:
             _cfg = _yaml.safe_load(_f) or {}
         # Expand ${ENV_VAR} references before bridging to env vars.
-        from hermes_cli.config import _expand_env_vars
+        from aideus_cli.config import _expand_env_vars
         _cfg = _expand_env_vars(_cfg)
         # Top-level simple values (fallback only — don't override .env)
         for _key, _val in _cfg.items():
@@ -344,45 +344,45 @@ if _config_path.exists():
         _agent_cfg = _cfg.get("agent", {})
         if _agent_cfg and isinstance(_agent_cfg, dict):
             if "max_turns" in _agent_cfg:
-                os.environ["HERMES_MAX_ITERATIONS"] = str(_agent_cfg["max_turns"])
-            # Bridge agent.gateway_timeout → HERMES_AGENT_TIMEOUT env var.
+                os.environ["AIDEUS_MAX_ITERATIONS"] = str(_agent_cfg["max_turns"])
+            # Bridge agent.gateway_timeout → AIDEUS_AGENT_TIMEOUT env var.
             # Env var from .env takes precedence (already in os.environ).
-            if "gateway_timeout" in _agent_cfg and "HERMES_AGENT_TIMEOUT" not in os.environ:
-                os.environ["HERMES_AGENT_TIMEOUT"] = str(_agent_cfg["gateway_timeout"])
-            if "gateway_timeout_warning" in _agent_cfg and "HERMES_AGENT_TIMEOUT_WARNING" not in os.environ:
-                os.environ["HERMES_AGENT_TIMEOUT_WARNING"] = str(_agent_cfg["gateway_timeout_warning"])
-            if "gateway_notify_interval" in _agent_cfg and "HERMES_AGENT_NOTIFY_INTERVAL" not in os.environ:
-                os.environ["HERMES_AGENT_NOTIFY_INTERVAL"] = str(_agent_cfg["gateway_notify_interval"])
-            if "restart_drain_timeout" in _agent_cfg and "HERMES_RESTART_DRAIN_TIMEOUT" not in os.environ:
-                os.environ["HERMES_RESTART_DRAIN_TIMEOUT"] = str(_agent_cfg["restart_drain_timeout"])
+            if "gateway_timeout" in _agent_cfg and "AIDEUS_AGENT_TIMEOUT" not in os.environ:
+                os.environ["AIDEUS_AGENT_TIMEOUT"] = str(_agent_cfg["gateway_timeout"])
+            if "gateway_timeout_warning" in _agent_cfg and "AIDEUS_AGENT_TIMEOUT_WARNING" not in os.environ:
+                os.environ["AIDEUS_AGENT_TIMEOUT_WARNING"] = str(_agent_cfg["gateway_timeout_warning"])
+            if "gateway_notify_interval" in _agent_cfg and "AIDEUS_AGENT_NOTIFY_INTERVAL" not in os.environ:
+                os.environ["AIDEUS_AGENT_NOTIFY_INTERVAL"] = str(_agent_cfg["gateway_notify_interval"])
+            if "restart_drain_timeout" in _agent_cfg and "AIDEUS_RESTART_DRAIN_TIMEOUT" not in os.environ:
+                os.environ["AIDEUS_RESTART_DRAIN_TIMEOUT"] = str(_agent_cfg["restart_drain_timeout"])
             if (
                 "gateway_auto_continue_freshness" in _agent_cfg
-                and "HERMES_AUTO_CONTINUE_FRESHNESS" not in os.environ
+                and "AIDEUS_AUTO_CONTINUE_FRESHNESS" not in os.environ
             ):
-                os.environ["HERMES_AUTO_CONTINUE_FRESHNESS"] = str(
+                os.environ["AIDEUS_AUTO_CONTINUE_FRESHNESS"] = str(
                     _agent_cfg["gateway_auto_continue_freshness"]
                 )
         _display_cfg = _cfg.get("display", {})
         if _display_cfg and isinstance(_display_cfg, dict):
-            if "busy_input_mode" in _display_cfg and "HERMES_GATEWAY_BUSY_INPUT_MODE" not in os.environ:
-                os.environ["HERMES_GATEWAY_BUSY_INPUT_MODE"] = str(_display_cfg["busy_input_mode"])
-        # Timezone: bridge config.yaml → HERMES_TIMEZONE env var.
-        # HERMES_TIMEZONE from .env takes precedence (already in os.environ).
+            if "busy_input_mode" in _display_cfg and "AIDEUS_GATEWAY_BUSY_INPUT_MODE" not in os.environ:
+                os.environ["AIDEUS_GATEWAY_BUSY_INPUT_MODE"] = str(_display_cfg["busy_input_mode"])
+        # Timezone: bridge config.yaml → AIDEUS_TIMEZONE env var.
+        # AIDEUS_TIMEZONE from .env takes precedence (already in os.environ).
         _tz_cfg = _cfg.get("timezone", "")
-        if _tz_cfg and isinstance(_tz_cfg, str) and "HERMES_TIMEZONE" not in os.environ:
-            os.environ["HERMES_TIMEZONE"] = _tz_cfg.strip()
+        if _tz_cfg and isinstance(_tz_cfg, str) and "AIDEUS_TIMEZONE" not in os.environ:
+            os.environ["AIDEUS_TIMEZONE"] = _tz_cfg.strip()
         # Security settings
         _security_cfg = _cfg.get("security", {})
         if isinstance(_security_cfg, dict):
             _redact = _security_cfg.get("redact_secrets")
             if _redact is not None:
-                os.environ["HERMES_REDACT_SECRETS"] = str(_redact).lower()
+                os.environ["AIDEUS_REDACT_SECRETS"] = str(_redact).lower()
     except Exception:
         pass  # Non-fatal; gateway can still run with .env values
 
 # Apply IPv4 preference if configured (before any HTTP clients are created).
 try:
-    from hermes_constants import apply_ipv4_preference
+    from aideus_constants import apply_ipv4_preference
     _network_cfg = (_cfg if '_cfg' in dir() else {}).get("network", {})
     if isinstance(_network_cfg, dict) and _network_cfg.get("force_ipv4"):
         apply_ipv4_preference(force=True)
@@ -391,23 +391,23 @@ except Exception:
 
 # Validate config structure early — log warnings so gateway operators see problems
 try:
-    from hermes_cli.config import print_config_warnings
+    from aideus_cli.config import print_config_warnings
     print_config_warnings()
 except Exception:
     pass
 
 # Warn if user has deprecated MESSAGING_CWD / TERMINAL_CWD in .env
 try:
-    from hermes_cli.config import warn_deprecated_cwd_env_vars
+    from aideus_cli.config import warn_deprecated_cwd_env_vars
     warn_deprecated_cwd_env_vars()
 except Exception:
     pass
 
 # Gateway runs in quiet mode - suppress debug output and use cwd directly (no temp dirs)
-os.environ["HERMES_QUIET"] = "1"
+os.environ["AIDEUS_QUIET"] = "1"
 
 # Enable interactive exec approval for dangerous commands on messaging platforms
-os.environ["HERMES_EXEC_ASK"] = "1"
+os.environ["AIDEUS_EXEC_ASK"] = "1"
 
 # Set terminal working directory for messaging platforms.
 # config.yaml terminal.cwd is the canonical source (bridged to TERMINAL_CWD
@@ -472,15 +472,15 @@ def _resolve_runtime_agent_kwargs() -> dict:
     resolve credentials using the fallback provider chain from config.yaml
     before giving up.
     """
-    from hermes_cli.runtime_provider import (
+    from aideus_cli.runtime_provider import (
         resolve_runtime_provider,
         format_runtime_provider_error,
     )
-    from hermes_cli.auth import AuthError
+    from aideus_cli.auth import AuthError
 
     try:
         runtime = resolve_runtime_provider(
-            requested=os.getenv("HERMES_INFERENCE_PROVIDER"),
+            requested=os.getenv("AIDEUS_INFERENCE_PROVIDER"),
         )
     except AuthError as auth_exc:
         # Primary provider auth failed (expired token, revoked key, etc.).
@@ -506,10 +506,10 @@ def _resolve_runtime_agent_kwargs() -> dict:
 
 def _try_resolve_fallback_provider() -> dict | None:
     """Attempt to resolve credentials from the fallback_model/fallback_providers config."""
-    from hermes_cli.runtime_provider import resolve_runtime_provider
+    from aideus_cli.runtime_provider import resolve_runtime_provider
     try:
         import yaml as _y
-        cfg_path = _hermes_home / "config.yaml"
+        cfg_path = _aideus_home / "config.yaml"
         if not cfg_path.exists():
             return None
         with open(cfg_path, encoding="utf-8") as _f:
@@ -629,11 +629,11 @@ def _check_unavailable_skill(command_name: str) -> str | None:
                 if name == normalized and name in disabled:
                     return (
                         f"The **{command_name}** skill is installed but disabled.\n"
-                        f"Enable it with: `hermes skills config`"
+                        f"Enable it with: `aideus skills config`"
                     )
 
         # Check optional skills (shipped with repo but not installed)
-        from hermes_constants import get_optional_skills_dir
+        from aideus_constants import get_optional_skills_dir
         repo_root = Path(__file__).resolve().parent.parent
         optional_dir = get_optional_skills_dir(repo_root / "optional-skills")
         if optional_dir.exists():
@@ -646,7 +646,7 @@ def _check_unavailable_skill(command_name: str) -> str | None:
                     install_path = f"official/{'/'.join(parts)}"
                     return (
                         f"The **{command_name}** skill is available but not installed.\n"
-                        f"Install it with: `hermes skills install {install_path}`"
+                        f"Install it with: `aideus skills install {install_path}`"
                     )
     except Exception:
         pass
@@ -659,19 +659,19 @@ def _platform_config_key(platform: "Platform") -> str:
 
 
 def _load_gateway_config() -> dict:
-    """Load and parse ~/.hermes/config.yaml, returning {} on any error.
+    """Load and parse ~/.aideus/config.yaml, returning {} on any error.
 
-    Uses the module-level ``_hermes_home`` (so tests that monkeypatch it
+    Uses the module-level ``_aideus_home`` (so tests that monkeypatch it
     still see their fixture) and shares the mtime-keyed raw-yaml cache
-    from ``hermes_cli.config.read_raw_config`` when the paths match.
+    from ``aideus_cli.config.read_raw_config`` when the paths match.
     """
-    config_path = _hermes_home / 'config.yaml'
+    config_path = _aideus_home / 'config.yaml'
     try:
-        from hermes_cli.config import get_config_path, read_raw_config
-        # Fast path: if _hermes_home agrees with the canonical config
+        from aideus_cli.config import get_config_path, read_raw_config
+        # Fast path: if _aideus_home agrees with the canonical config
         # location, reuse the shared cache. Otherwise fall through to a
         # direct read (keeps test fixtures with a monkeypatched
-        # _hermes_home working).
+        # _aideus_home working).
         if config_path == get_config_path():
             return read_raw_config()
     except Exception:
@@ -703,27 +703,27 @@ def _resolve_gateway_model(config: dict | None = None) -> str:
     return ""
 
 
-def _resolve_hermes_bin() -> Optional[list[str]]:
-    """Resolve the Hermes update command as argv parts.
+def _resolve_aideus_bin() -> Optional[list[str]]:
+    """Resolve the Aideus update command as argv parts.
 
     Tries in order:
-    1. ``shutil.which("hermes")`` — standard PATH lookup
-    2. ``sys.executable -m hermes_cli.main`` — fallback when Hermes is running
-       from a venv/module invocation and the ``hermes`` shim is not on PATH
+    1. ``shutil.which("aideus")`` — standard PATH lookup
+    2. ``sys.executable -m aideus_cli.main`` — fallback when Aideus is running
+       from a venv/module invocation and the ``aideus`` shim is not on PATH
 
     Returns argv parts ready for quoting/joining, or ``None`` if neither works.
     """
     import shutil
 
-    hermes_bin = shutil.which("hermes")
-    if hermes_bin:
-        return [hermes_bin]
+    aideus_bin = shutil.which("aideus")
+    if aideus_bin:
+        return [aideus_bin]
 
     try:
         import importlib.util
 
-        if importlib.util.find_spec("hermes_cli") is not None:
-            return [sys.executable, "-m", "hermes_cli.main"]
+        if importlib.util.find_spec("aideus_cli") is not None:
+            return [sys.executable, "-m", "aideus_cli.main"]
     except Exception:
         pass
 
@@ -926,7 +926,7 @@ class GatewayRunner:
         # Initialize session database for session_search tool support
         self._session_db = None
         try:
-            from hermes_state import SessionDB
+            from aideus_state import SessionDB
             self._session_db = SessionDB()
         except Exception as e:
             logger.debug("SQLite session store not available: %s", e)
@@ -939,7 +939,7 @@ class GatewayRunner:
         # but never raised.
         if self._session_db is not None:
             try:
-                from hermes_cli.config import load_config as _load_full_config
+                from aideus_cli.config import load_config as _load_full_config
                 _sess_cfg = (_load_full_config().get("sessions") or {})
                 if _sess_cfg.get("auto_prune", False):
                     self._session_db.maybe_auto_prune_and_vacuum(
@@ -952,10 +952,10 @@ class GatewayRunner:
                 logger.debug("state.db auto-maintenance skipped: %s", exc)
 
         # Opportunistic shadow-repo cleanup — deletes orphan/stale
-        # checkpoint repos under ~/.hermes/checkpoints/.  Opt-in via
+        # checkpoint repos under ~/.aideus/checkpoints/.  Opt-in via
         # checkpoints.auto_prune, idempotent via .last_prune marker.
         try:
-            from hermes_cli.config import load_config as _load_full_config
+            from aideus_cli.config import load_config as _load_full_config
             _ckpt_cfg = (_load_full_config().get("checkpoints") or {})
             if _ckpt_cfg.get("auto_prune", False):
                 from tools.checkpoint_manager import maybe_auto_prune_checkpoints
@@ -1024,7 +1024,7 @@ class GatewayRunner:
 
         logger.warning(
             "Docker backend is enabled for the messaging gateway but no explicit host-visible "
-            "output mount (for example '/home/user/.hermes/cache/documents:/output') is configured. "
+            "output mount (for example '/home/user/.aideus/cache/documents:/output') is configured. "
             "This is fine if the model already emits host-visible paths, but MEDIA file delivery can fail "
             "for container-local paths like '/workspace/...' or '/output/...'."
         )
@@ -1034,16 +1034,16 @@ class GatewayRunner:
     # -- Setup skill availability ----------------------------------------
 
     def _has_setup_skill(self) -> bool:
-        """Check if the hermes-agent-setup skill is installed."""
+        """Check if the aideus-agent-setup skill is installed."""
         try:
             from tools.skill_manager_tool import _find_skill
-            return _find_skill("hermes-agent-setup") is not None
+            return _find_skill("aideus-agent-setup") is not None
         except Exception:
             return False
 
     # -- Voice mode persistence ------------------------------------------
 
-    _VOICE_MODE_PATH = _hermes_home / "gateway_voice_mode.json"
+    _VOICE_MODE_PATH = _aideus_home / "gateway_voice_mode.json"
 
     def _voice_key(self, platform: Platform, chat_id: str) -> str:
         """Return a platform-namespaced key for voice mode state."""
@@ -1134,9 +1134,9 @@ class GatewayRunner:
             return
 
         # Push the global voice.auto_tts default (config.yaml) onto the adapter.
-        # Lazy import to avoid adding a module-level dep from gateway → hermes_cli.
+        # Lazy import to avoid adding a module-level dep from gateway → aideus_cli.
         try:
-            from hermes_cli.config import load_config as _load_full_config
+            from aideus_cli.config import load_config as _load_full_config
             _full_cfg = _load_full_config()
             _auto_tts_default = bool(
                 (_full_cfg.get("voice") or {}).get("auto_tts", False)
@@ -1182,13 +1182,13 @@ class GatewayRunner:
 
     def _platform_connect_timeout_secs(self) -> float:
         """Return the per-platform connect timeout used during startup/retry."""
-        raw = os.getenv("HERMES_GATEWAY_PLATFORM_CONNECT_TIMEOUT", "").strip()
+        raw = os.getenv("AIDEUS_GATEWAY_PLATFORM_CONNECT_TIMEOUT", "").strip()
         if raw:
             try:
                 timeout = float(raw)
             except ValueError:
                 logger.warning(
-                    "Ignoring invalid HERMES_GATEWAY_PLATFORM_CONNECT_TIMEOUT=%r",
+                    "Ignoring invalid AIDEUS_GATEWAY_PLATFORM_CONNECT_TIMEOUT=%r",
                     raw,
                 )
             else:
@@ -1296,12 +1296,12 @@ class GatewayRunner:
             )
 
         # When the config has no model.default but a provider was resolved
-        # (e.g. user ran `hermes auth add openai-codex` without `hermes model`),
+        # (e.g. user ran `aideus auth add openai-codex` without `aideus model`),
         # fall back to the provider's first catalog model so the API call
         # doesn't fail with "model must be a non-empty string".
         if not model and runtime_kwargs.get("provider"):
             try:
-                from hermes_cli.models import get_default_model_for_provider
+                from aideus_cli.models import get_default_model_for_provider
                 model = get_default_model_for_provider(runtime_kwargs["provider"])
                 if model:
                     logger.info(
@@ -1321,7 +1321,7 @@ class GatewayRunner:
         mode, attach `request_overrides` so the API call is marked
         accordingly.
         """
-        from hermes_cli.models import resolve_fast_mode_overrides
+        from aideus_cli.models import resolve_fast_mode_overrides
 
         runtime = {
             "api_key": runtime_kwargs.get("api_key"),
@@ -1549,15 +1549,15 @@ class GatewayRunner:
     def _load_prefill_messages() -> List[Dict[str, Any]]:
         """Load ephemeral prefill messages from config or env var.
         
-        Checks HERMES_PREFILL_MESSAGES_FILE env var first, then falls back to
-        the prefill_messages_file key in ~/.hermes/config.yaml.
-        Relative paths are resolved from ~/.hermes/.
+        Checks AIDEUS_PREFILL_MESSAGES_FILE env var first, then falls back to
+        the prefill_messages_file key in ~/.aideus/config.yaml.
+        Relative paths are resolved from ~/.aideus/.
         """
-        file_path = os.getenv("HERMES_PREFILL_MESSAGES_FILE", "")
+        file_path = os.getenv("AIDEUS_PREFILL_MESSAGES_FILE", "")
         if not file_path:
             try:
                 import yaml as _y
-                cfg_path = _hermes_home / "config.yaml"
+                cfg_path = _aideus_home / "config.yaml"
                 if cfg_path.exists():
                     with open(cfg_path, encoding="utf-8") as _f:
                         cfg = _y.safe_load(_f) or {}
@@ -1568,7 +1568,7 @@ class GatewayRunner:
             return []
         path = Path(file_path).expanduser()
         if not path.is_absolute():
-            path = _hermes_home / path
+            path = _aideus_home / path
         if not path.exists():
             logger.warning("Prefill messages file not found: %s", path)
             return []
@@ -1587,15 +1587,15 @@ class GatewayRunner:
     def _load_ephemeral_system_prompt() -> str:
         """Load ephemeral system prompt from config or env var.
         
-        Checks HERMES_EPHEMERAL_SYSTEM_PROMPT env var first, then falls back to
-        agent.system_prompt in ~/.hermes/config.yaml.
+        Checks AIDEUS_EPHEMERAL_SYSTEM_PROMPT env var first, then falls back to
+        agent.system_prompt in ~/.aideus/config.yaml.
         """
-        prompt = os.getenv("HERMES_EPHEMERAL_SYSTEM_PROMPT", "")
+        prompt = os.getenv("AIDEUS_EPHEMERAL_SYSTEM_PROMPT", "")
         if prompt:
             return prompt
         try:
             import yaml as _y
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _aideus_home / "config.yaml"
             if cfg_path.exists():
                 with open(cfg_path, encoding="utf-8") as _f:
                     cfg = _y.safe_load(_f) or {}
@@ -1612,11 +1612,11 @@ class GatewayRunner:
         "minimal", "low", "medium", "high", "xhigh". Returns None to use
         default (medium).
         """
-        from hermes_constants import parse_reasoning_effort
+        from aideus_constants import parse_reasoning_effort
         effort = ""
         try:
             import yaml as _y
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _aideus_home / "config.yaml"
             if cfg_path.exists():
                 with open(cfg_path, encoding="utf-8") as _f:
                     cfg = _y.safe_load(_f) or {}
@@ -1699,7 +1699,7 @@ class GatewayRunner:
         raw = ""
         try:
             import yaml as _y
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _aideus_home / "config.yaml"
             if cfg_path.exists():
                 with open(cfg_path, encoding="utf-8") as _f:
                     cfg = _y.safe_load(_f) or {}
@@ -1720,7 +1720,7 @@ class GatewayRunner:
         """Load show_reasoning toggle from config.yaml display section."""
         try:
             import yaml as _y
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _aideus_home / "config.yaml"
             if cfg_path.exists():
                 with open(cfg_path, encoding="utf-8") as _f:
                     cfg = _y.safe_load(_f) or {}
@@ -1732,11 +1732,11 @@ class GatewayRunner:
     @staticmethod
     def _load_busy_input_mode() -> str:
         """Load gateway drain-time busy-input behavior from config/env."""
-        mode = os.getenv("HERMES_GATEWAY_BUSY_INPUT_MODE", "").strip().lower()
+        mode = os.getenv("AIDEUS_GATEWAY_BUSY_INPUT_MODE", "").strip().lower()
         if not mode:
             try:
                 import yaml as _y
-                cfg_path = _hermes_home / "config.yaml"
+                cfg_path = _aideus_home / "config.yaml"
                 if cfg_path.exists():
                     with open(cfg_path, encoding="utf-8") as _f:
                         cfg = _y.safe_load(_f) or {}
@@ -1752,11 +1752,11 @@ class GatewayRunner:
     @staticmethod
     def _load_restart_drain_timeout() -> float:
         """Load graceful gateway restart/stop drain timeout in seconds."""
-        raw = os.getenv("HERMES_RESTART_DRAIN_TIMEOUT", "").strip()
+        raw = os.getenv("AIDEUS_RESTART_DRAIN_TIMEOUT", "").strip()
         if not raw:
             try:
                 import yaml as _y
-                cfg_path = _hermes_home / "config.yaml"
+                cfg_path = _aideus_home / "config.yaml"
                 if cfg_path.exists():
                     with open(cfg_path, encoding="utf-8") as _f:
                         cfg = _y.safe_load(_f) or {}
@@ -1785,11 +1785,11 @@ class GatewayRunner:
           - ``error``  — only the final message when exit code is non-zero
           - ``off``    — no watcher messages at all
         """
-        mode = os.getenv("HERMES_BACKGROUND_NOTIFICATIONS", "")
+        mode = os.getenv("AIDEUS_BACKGROUND_NOTIFICATIONS", "")
         if not mode:
             try:
                 import yaml as _y
-                cfg_path = _hermes_home / "config.yaml"
+                cfg_path = _aideus_home / "config.yaml"
                 if cfg_path.exists():
                     with open(cfg_path, encoding="utf-8") as _f:
                         cfg = _y.safe_load(_f) or {}
@@ -1815,7 +1815,7 @@ class GatewayRunner:
         """Load OpenRouter provider routing preferences from config.yaml."""
         try:
             import yaml as _y
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _aideus_home / "config.yaml"
             if cfg_path.exists():
                 with open(cfg_path, encoding="utf-8") as _f:
                     cfg = _y.safe_load(_f) or {}
@@ -1834,7 +1834,7 @@ class GatewayRunner:
         """
         try:
             import yaml as _y
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _aideus_home / "config.yaml"
             if cfg_path.exists():
                 with open(cfg_path, encoding="utf-8") as _f:
                     cfg = _y.safe_load(_f) or {}
@@ -2000,7 +2000,7 @@ class GatewayRunner:
                     f"{message}\n\n"
                     f"{busy_input_hint_gateway(_hint_mode)}"
                 )
-                mark_seen(_hermes_home / "config.yaml", BUSY_INPUT_FLAG)
+                mark_seen(_aideus_home / "config.yaml", BUSY_INPUT_FLAG)
         except Exception as _onb_err:
             logger.debug("Failed to apply busy-input onboarding hint: %s", _onb_err)
 
@@ -2137,7 +2137,7 @@ class GatewayRunner:
     def _finalize_shutdown_agents(self, active_agents: Dict[str, Any]) -> None:
         for agent in active_agents.values():
             try:
-                from hermes_cli.plugins import invoke_hook as _invoke_hook
+                from aideus_cli.plugins import invoke_hook as _invoke_hook
                 _invoke_hook(
                     "on_session_finalize",
                     session_id=getattr(agent, "session_id", None),
@@ -2200,7 +2200,7 @@ class GatewayRunner:
         """
         import json
 
-        path = _hermes_home / self._STUCK_LOOP_FILE
+        path = _aideus_home / self._STUCK_LOOP_FILE
         try:
             counts = json.loads(path.read_text()) if path.exists() else {}
         except Exception:
@@ -2227,7 +2227,7 @@ class GatewayRunner:
         """
         import json
 
-        path = _hermes_home / self._STUCK_LOOP_FILE
+        path = _aideus_home / self._STUCK_LOOP_FILE
         if not path.exists():
             return 0
 
@@ -2274,7 +2274,7 @@ class GatewayRunner:
         """
         import json
 
-        path = _hermes_home / self._STUCK_LOOP_FILE
+        path = _aideus_home / self._STUCK_LOOP_FILE
         if not path.exists():
             return
         try:
@@ -2292,13 +2292,13 @@ class GatewayRunner:
         import shutil
         import subprocess
 
-        hermes_cmd = _resolve_hermes_bin()
-        if not hermes_cmd:
-            logger.error("Could not locate hermes binary for detached /restart")
+        aideus_cmd = _resolve_aideus_bin()
+        if not aideus_cmd:
+            logger.error("Could not locate aideus binary for detached /restart")
             return
 
         current_pid = os.getpid()
-        cmd = " ".join(shlex.quote(part) for part in hermes_cmd)
+        cmd = " ".join(shlex.quote(part) for part in aideus_cmd)
         shell_cmd = (
             f"while kill -0 {current_pid} 2>/dev/null; do sleep 0.2; done; "
             f"{cmd} gateway restart"
@@ -2342,10 +2342,10 @@ class GatewayRunner:
         
         Returns True if at least one adapter connected successfully.
         """
-        logger.info("Starting Hermes Gateway...")
+        logger.info("Starting Aideus Gateway...")
         logger.info("Session storage: %s", self.config.sessions_dir)
         try:
-            from hermes_cli.profiles import get_active_profile_name
+            from aideus_cli.profiles import get_active_profile_name
             _profile = get_active_profile_name()
             if _profile and _profile != "default":
                 logger.info("Active profile: %s", _profile)
@@ -2417,18 +2417,18 @@ class GatewayRunner:
         if not _any_allowlist and not _allow_all:
             logger.warning(
                 "No user allowlists configured. All unauthorized users will be denied. "
-                "Set GATEWAY_ALLOW_ALL_USERS=true in ~/.hermes/.env to allow open access, "
+                "Set GATEWAY_ALLOW_ALL_USERS=true in ~/.aideus/.env to allow open access, "
                 "or configure platform allowlists (e.g., TELEGRAM_ALLOWED_USERS=your_id)."
             )
         
         # Discover Python plugins before shell hooks so plugin block
         # decisions take precedence in tie cases.  The CLI startup path
-        # does this via an explicit call in hermes_cli/main.py; the
+        # does this via an explicit call in aideus_cli/main.py; the
         # gateway lazily imports run_agent inside per-request handlers,
         # so the discover_plugins() side-effect in model_tools.py is NOT
         # guaranteed to have run by the time we reach this point.
         try:
-            from hermes_cli.plugins import discover_plugins
+            from aideus_cli.plugins import discover_plugins
             discover_plugins()
         except Exception:
             logger.debug(
@@ -2437,7 +2437,7 @@ class GatewayRunner:
 
         # Register declarative shell hooks from cli-config.yaml.  Gateway
         # has no TTY, so consent has to come from one of the three opt-in
-        # channels (--accept-hooks on launch, HERMES_ACCEPT_HOOKS env var,
+        # channels (--accept-hooks on launch, AIDEUS_ACCEPT_HOOKS env var,
         # or hooks_auto_accept: true in config.yaml).  We pass
         # accept_hooks=False here and let register_from_config resolve
         # the effective value from env + config itself — the CLI-side
@@ -2445,7 +2445,7 @@ class GatewayRunner:
         # hooks_auto_accept here would just duplicate that lookup.
         # Failures are logged but must never block gateway startup.
         try:
-            from hermes_cli.config import load_config
+            from aideus_cli.config import load_config
             from agent.shell_hooks import register_from_config
             register_from_config(load_config(), accept_hooks=False)
         except Exception:
@@ -2474,9 +2474,9 @@ class GatewayRunner:
         #
         # SKIP suspension after a clean (graceful) shutdown — the previous
         # process already drained active agents, so sessions aren't stuck.
-        # This prevents unwanted auto-resets after `hermes update`,
-        # `hermes gateway restart`, or `/restart`.
-        _clean_marker = _hermes_home / ".clean_shutdown"
+        # This prevents unwanted auto-resets after `aideus update`,
+        # `aideus gateway restart`, or `/restart`.
+        _clean_marker = _aideus_home / ".clean_shutdown"
         if _clean_marker.exists():
             logger.info("Previous gateway exited cleanly — skipping session suspension")
             try:
@@ -2679,8 +2679,8 @@ class GatewayRunner:
         if not notified and any(
             path.exists()
             for path in (
-                _hermes_home / ".update_pending.json",
-                _hermes_home / ".update_pending.claimed.json",
+                _aideus_home / ".update_pending.json",
+                _aideus_home / ".update_pending.claimed.json",
             )
         ):
             self._schedule_update_notification_watch()
@@ -2757,7 +2757,7 @@ class GatewayRunner:
                 for key, entry in _expired_entries:
                     try:
                         try:
-                            from hermes_cli.plugins import invoke_hook as _invoke_hook
+                            from aideus_cli.plugins import invoke_hook as _invoke_hook
                             _parts = key.split(":")
                             _platform = _parts[2] if len(_parts) > 2 else ""
                             _invoke_hook(
@@ -3226,7 +3226,7 @@ class GatewayRunner:
             # of resuming a half-finished tool loop.
             if not timed_out:
                 try:
-                    (_hermes_home / ".clean_shutdown").touch()
+                    (_aideus_home / ".clean_shutdown").touch()
                 except Exception:
                     pass
             else:
@@ -3322,7 +3322,7 @@ class GatewayRunner:
         elif platform == Platform.SLACK:
             from gateway.platforms.slack import SlackAdapter, check_slack_requirements
             if not check_slack_requirements():
-                logger.warning("Slack: slack-bolt not installed. Run: pip install 'hermes-agent[slack]'")
+                logger.warning("Slack: slack-bolt not installed. Run: pip install 'aideus-agent[slack]'")
                 return None
             return SlackAdapter(config)
 
@@ -3743,7 +3743,7 @@ class GatewayRunner:
         # (e.g. customer handover ingest) without triggering the pairing flow.
         if not is_internal:
             try:
-                from hermes_cli.plugins import invoke_hook as _invoke_hook
+                from aideus_cli.plugins import invoke_hook as _invoke_hook
                 _hook_results = _invoke_hook(
                     "pre_gateway_dispatch",
                     event=event,
@@ -3805,7 +3805,7 @@ class GatewayRunner:
                             f"Hi~ I don't recognize you yet!\n\n"
                             f"Here's your pairing code: `{code}`\n\n"
                             f"Ask the bot owner to run:\n"
-                            f"`hermes pairing approve {platform_name} {code}`"
+                            f"`aideus pairing approve {platform_name} {code}`"
                         )
                 else:
                     adapter = self.adapters.get(source.platform)
@@ -3841,7 +3841,7 @@ class GatewayRunner:
                 _recognized_cmd = None
                 if cmd:
                     try:
-                        from hermes_cli.commands import resolve_command as _resolve_update_cmd
+                        from aideus_cli.commands import resolve_command as _resolve_update_cmd
                     except Exception:
                         _resolve_update_cmd = None
                     if _resolve_update_cmd is not None:
@@ -3855,7 +3855,7 @@ class GatewayRunner:
                 else:
                     response_text = raw
             if response_text:
-                response_path = _hermes_home / ".update_response"
+                response_path = _aideus_home / ".update_response"
                 try:
                     tmp = response_path.with_suffix(".tmp")
                     tmp.write_text(response_text)
@@ -3873,7 +3873,7 @@ class GatewayRunner:
             # blocking on stdin until the 30-minute watcher timeout.
             # The slash command then falls through to normal dispatch.
             if _recognized_cmd:
-                response_path = _hermes_home / ".update_response"
+                response_path = _aideus_home / ".update_response"
                 try:
                     tmp = response_path.with_suffix(".tmp")
                     tmp.write_text("")
@@ -3948,7 +3948,7 @@ class GatewayRunner:
         # wall-clock age alone isn't sufficient.  Evict only when the agent
         # has been *idle* beyond the inactivity threshold (or when the agent
         # object has no activity tracker and wall-clock age is extreme).
-        _raw_stale_timeout = float(os.getenv("HERMES_AGENT_TIMEOUT", 1800))
+        _raw_stale_timeout = float(os.getenv("AIDEUS_AGENT_TIMEOUT", 1800))
         _stale_ts = self._running_agents_ts.get(_quick_key, 0)
         if _quick_key in self._running_agents and _stale_ts:
             _stale_age = time.time() - _stale_ts
@@ -4000,7 +4000,7 @@ class GatewayRunner:
                 return await self._handle_status_command(event)
 
             # Resolve the command once for all early-intercept checks below.
-            from hermes_cli.commands import (
+            from aideus_cli.commands import (
                 ACTIVE_SESSION_BYPASS_COMMANDS as _DEDICATED_HANDLERS,
                 resolve_command as _resolve_cmd_inner,
             )
@@ -4188,7 +4188,7 @@ class GatewayRunner:
                 return None
 
             _telegram_followup_grace = float(
-                os.getenv("HERMES_TELEGRAM_FOLLOWUP_GRACE_SECONDS", "3.0")
+                os.getenv("AIDEUS_TELEGRAM_FOLLOWUP_GRACE_SECONDS", "3.0")
             )
             _started_at = self._running_agents_ts.get(_quick_key, 0)
             if (
@@ -4273,7 +4273,7 @@ class GatewayRunner:
         # Check for commands
         command = event.get_command()
 
-        from hermes_cli.commands import (
+        from aideus_cli.commands import (
             GATEWAY_KNOWN_COMMANDS,
             is_gateway_known_command,
             resolve_command as _resolve_cmd,
@@ -4501,10 +4501,10 @@ class GatewayRunner:
         # Plugin-registered slash commands
         if command:
             try:
-                from hermes_cli.plugins import get_plugin_command_handler
+                from aideus_cli.plugins import get_plugin_command_handler
                 # Normalize underscores to hyphens so Telegram's underscored
                 # autocomplete form matches plugin commands registered with
-                # hyphens. See hermes_cli/commands.py:_build_telegram_menu.
+                # hyphens. See aideus_cli/commands.py:_build_telegram_menu.
                 plugin_handler = get_plugin_command_handler(command.replace("_", "-"))
                 if plugin_handler:
                     user_args = event.get_command_args().strip()
@@ -4540,7 +4540,7 @@ class GatewayRunner:
                         if _skill_name in _get_plat_disabled(platform=_plat):
                             return (
                                 f"The **{_skill_name}** skill is disabled for {_plat}.\n"
-                                f"Enable it with: `hermes skills config`"
+                                f"Enable it with: `aideus skills config`"
                             )
                     user_instruction = event.get_command_args().strip()
                     msg = build_skill_invocation_message(
@@ -4694,12 +4694,12 @@ class GatewayRunner:
                                 "🎤 I received your voice message but can't transcribe it — "
                                 "no speech-to-text provider is configured.\n\n"
                                 "To enable voice: install faster-whisper "
-                                "(`pip install faster-whisper` in the Hermes venv) "
+                                "(`pip install faster-whisper` in the Aideus venv) "
                                 "and set `stt.enabled: true` in config.yaml, "
                                 "then /restart the gateway."
                             )
                             if self._has_setup_skill():
-                                _stt_msg += "\n\nFor full setup instructions, type: `/skill hermes-agent-setup`"
+                                _stt_msg += "\n\nFor full setup instructions, type: `/skill aideus-agent-setup`"
                             await _stt_adapter.send(
                                 source.chat_id,
                                 _stt_msg,
@@ -5038,7 +5038,7 @@ class GatewayRunner:
                 if _hyg_config_context_length is None and _hyg_base_url:
                     try:
                         try:
-                            from hermes_cli.config import get_compatible_custom_providers as _gw_gcp
+                            from aideus_cli.config import get_compatible_custom_providers as _gw_gcp
                             _hyg_custom_providers = _gw_gcp(_hyg_data)
                         except Exception:
                             _hyg_custom_providers = _hyg_data.get("custom_providers")
@@ -5268,18 +5268,18 @@ class GatewayRunner:
             if not os.getenv(env_key):
                 adapter = self.adapters.get(source.platform)
                 if adapter:
-                    # Slack dispatches all Hermes commands through a single
-                    # parent slash command `/hermes`; bare `/sethome` is not
+                    # Slack dispatches all Aideus commands through a single
+                    # parent slash command `/aideus`; bare `/sethome` is not
                     # registered and would fail with "app did not respond".
                     sethome_cmd = (
-                        "/hermes sethome"
+                        "/aideus sethome"
                         if source.platform == Platform.SLACK
                         else "/sethome"
                     )
                     await adapter.send(
                         source.chat_id,
                         f"📬 No home channel is set for {platform_name.title()}. "
-                        f"A home channel is where Hermes delivers cron job results "
+                        f"A home channel is where Aideus delivers cron job results "
                         f"and cross-platform messages.\n\n"
                         f"Type {sethome_cmd} to make this chat your home channel, "
                         f"or ignore to skip."
@@ -5768,7 +5768,7 @@ class GatewayRunner:
                     provider = model_cfg.get("provider") or None
                     base_url = model_cfg.get("base_url") or None
                 try:
-                    from hermes_cli.config import get_compatible_custom_providers
+                    from aideus_cli.config import get_compatible_custom_providers
                     custom_provs = get_compatible_custom_providers(data)
                 except Exception:
                     custom_provs = data.get("custom_providers")
@@ -5881,7 +5881,7 @@ class GatewayRunner:
 
         # Fire plugin on_session_finalize hook (session boundary)
         try:
-            from hermes_cli.plugins import invoke_hook as _invoke_hook
+            from aideus_cli.plugins import invoke_hook as _invoke_hook
             _old_sid = old_entry.session_id if old_entry else None
             _invoke_hook("on_session_finalize", session_id=_old_sid,
                          platform=source.platform.value if source.platform else "")
@@ -5917,7 +5917,7 @@ class GatewayRunner:
 
         # Fire plugin on_session_reset hook (new session guaranteed to exist)
         try:
-            from hermes_cli.plugins import invoke_hook as _invoke_hook
+            from aideus_cli.plugins import invoke_hook as _invoke_hook
             _new_sid = new_entry.session_id if new_entry else None
             _invoke_hook("on_session_reset", session_id=_new_sid,
                          platform=source.platform.value if source.platform else "")
@@ -5926,7 +5926,7 @@ class GatewayRunner:
 
         # Append a random tip to the reset message
         try:
-            from hermes_cli.tips import get_random_tip
+            from aideus_cli.tips import get_random_tip
             _tip_line = f"\n✦ Tip: {get_random_tip()}"
         except Exception:
             _tip_line = ""
@@ -5937,10 +5937,10 @@ class GatewayRunner:
 
     async def _handle_profile_command(self, event: MessageEvent) -> str:
         """Handle /profile — show active profile name and home directory."""
-        from hermes_constants import display_hermes_home
-        from hermes_cli.profiles import get_active_profile_name
+        from aideus_constants import display_aideus_home
+        from aideus_cli.profiles import get_active_profile_name
 
-        display = display_hermes_home()
+        display = display_aideus_home()
         profile_name = get_active_profile_name()
 
         lines = [
@@ -5973,7 +5973,7 @@ class GatewayRunner:
                 title = None
 
         lines = [
-            "📊 **Hermes Gateway Status**",
+            "📊 **Aideus Gateway Status**",
             "",
             f"**Session ID:** `{session_entry.session_id}`",
         ]
@@ -6160,7 +6160,7 @@ class GatewayRunner:
             }
             if event.source.thread_id:
                 notify_data["thread_id"] = event.source.thread_id
-            (_hermes_home / ".restart_notify.json").write_text(
+            (_aideus_home / ".restart_notify.json").write_text(
                 json.dumps(notify_data)
             )
         except Exception as e:
@@ -6178,7 +6178,7 @@ class GatewayRunner:
             }
             if event.platform_update_id is not None:
                 dedup_data["update_id"] = event.platform_update_id
-            (_hermes_home / ".restart_last_processed.json").write_text(
+            (_aideus_home / ".restart_last_processed.json").write_text(
                 json.dumps(dedup_data)
             )
         except Exception as e:
@@ -6197,7 +6197,7 @@ class GatewayRunner:
             self.request_restart(detached=True, via_service=False)
         if active_agents:
             return f"⏳ Draining {active_agents} active agent(s) before restart..."
-        return "♻ Restarting gateway. If you aren't notified within 60 seconds, restart from the console with `hermes gateway restart`."
+        return "♻ Restarting gateway. If you aren't notified within 60 seconds, restart from the console with `aideus gateway restart`."
 
     def _is_stale_restart_redelivery(self, event: MessageEvent) -> bool:
         """Return True if this /restart is a Telegram re-delivery we already handled.
@@ -6227,7 +6227,7 @@ class GatewayRunner:
             return False
 
         try:
-            marker_path = _hermes_home / ".restart_last_processed.json"
+            marker_path = _aideus_home / ".restart_last_processed.json"
             if not marker_path.exists():
                 return False
             data = json.loads(marker_path.read_text())
@@ -6251,9 +6251,9 @@ class GatewayRunner:
 
     async def _handle_help_command(self, event: MessageEvent) -> str:
         """Handle /help command - list available commands."""
-        from hermes_cli.commands import gateway_help_lines
+        from aideus_cli.commands import gateway_help_lines
         lines = [
-            "📖 **Hermes Commands**\n",
+            "📖 **Aideus Commands**\n",
             *gateway_help_lines(),
         ]
         try:
@@ -6273,7 +6273,7 @@ class GatewayRunner:
 
     async def _handle_commands_command(self, event: MessageEvent) -> str:
         """Handle /commands [page] - paginated list of all commands and skills."""
-        from hermes_cli.commands import gateway_help_lines
+        from aideus_cli.commands import gateway_help_lines
 
         raw_args = event.get_command_args().strip()
         if raw_args:
@@ -6335,11 +6335,11 @@ class GatewayRunner:
           /model --provider <provider>        — switch to provider, auto-detect model
         """
         import yaml
-        from hermes_cli.model_switch import (
+        from aideus_cli.model_switch import (
             switch_model as _switch_model, parse_model_flags,
             list_authenticated_providers,
         )
-        from hermes_cli.providers import get_label
+        from aideus_cli.providers import get_label
 
         raw_args = event.get_command_args().strip()
 
@@ -6353,7 +6353,7 @@ class GatewayRunner:
         current_api_key = ""
         user_provs = None
         custom_provs = None
-        config_path = _hermes_home / "config.yaml"
+        config_path = _aideus_home / "config.yaml"
         try:
             cfg = _load_gateway_config()
             if cfg:
@@ -6364,7 +6364,7 @@ class GatewayRunner:
                     current_base_url = model_cfg.get("base_url", "")
                 user_provs = cfg.get("providers")
                 try:
-                    from hermes_cli.config import get_compatible_custom_providers
+                    from aideus_cli.config import get_compatible_custom_providers
                     custom_provs = get_compatible_custom_providers(cfg)
                 except Exception:
                     custom_provs = cfg.get("custom_providers")
@@ -6476,7 +6476,7 @@ class GatewayRunner:
                         lines = [f"Model switched to `{result.new_model}`"]
                         lines.append(f"Provider: {plabel}")
                         mi = result.model_info
-                        from hermes_cli.model_switch import resolve_display_context_length
+                        from aideus_cli.model_switch import resolve_display_context_length
                         ctx = resolve_display_context_length(
                             result.new_model,
                             result.target_provider,
@@ -6612,7 +6612,7 @@ class GatewayRunner:
                 model_cfg["provider"] = result.target_provider
                 if result.base_url:
                     model_cfg["base_url"] = result.base_url
-                from hermes_cli.config import save_config
+                from aideus_cli.config import save_config
                 save_config(cfg)
             except Exception as e:
                 logger.warning("Failed to persist model switch: %s", e)
@@ -6625,7 +6625,7 @@ class GatewayRunner:
         # Context: always resolve via the provider-aware chain so Codex OAuth,
         # Copilot, and Nous-enforced caps win over the raw models.dev entry.
         mi = result.model_info
-        from hermes_cli.model_switch import resolve_display_context_length
+        from aideus_cli.model_switch import resolve_display_context_length
         ctx = resolve_display_context_length(
             result.new_model,
             result.target_provider,
@@ -6663,10 +6663,10 @@ class GatewayRunner:
 
     async def _handle_personality_command(self, event: MessageEvent) -> str:
         """Handle /personality command - list or set a personality."""
-        from hermes_constants import display_hermes_home
+        from aideus_constants import display_aideus_home
 
         args = event.get_command_args().strip().lower()
-        config_path = _hermes_home / 'config.yaml'
+        config_path = _aideus_home / 'config.yaml'
 
         try:
             config = _load_gateway_config()
@@ -6676,7 +6676,7 @@ class GatewayRunner:
             personalities = {}
 
         if not personalities:
-            return f"No personalities configured in `{display_hermes_home()}/config.yaml`"
+            return f"No personalities configured in `{display_aideus_home()}/config.yaml`"
 
         if not args:
             lines = ["🎭 **Available Personalities**\n"]
@@ -6802,7 +6802,7 @@ class GatewayRunner:
         
         # Save to .env so it persists across restarts
         try:
-            from hermes_cli.config import save_env_value
+            from aideus_cli.config import save_env_value
             save_env_value(env_key, str(chat_id))
         except Exception as e:
             return f"Failed to save home channel: {e}"
@@ -7115,7 +7115,7 @@ class GatewayRunner:
             # Use .mp3 extension so edge-tts conversion to opus works correctly.
             # The TTS tool may convert to .ogg — use file_path from result.
             audio_path = os.path.join(
-                tempfile.gettempdir(), "hermes_voice",
+                tempfile.gettempdir(), "aideus_voice",
                 f"tts_reply_{_uuid.uuid4().hex[:12]}.mp3",
             )
             os.makedirs(os.path.dirname(audio_path), exist_ok=True)
@@ -7243,7 +7243,7 @@ class GatewayRunner:
         cp_cfg = {}
         try:
             import yaml as _y
-            _cfg_path = _hermes_home / "config.yaml"
+            _cfg_path = _aideus_home / "config.yaml"
             if _cfg_path.exists():
                 with open(_cfg_path, encoding="utf-8") as _f:
                     _data = _y.safe_load(_f) or {}
@@ -7352,11 +7352,11 @@ class GatewayRunner:
 
             platform_key = _platform_config_key(source.platform)
 
-            from hermes_cli.tools_config import _get_platform_tools
+            from aideus_cli.tools_config import _get_platform_tools
             enabled_toolsets = sorted(_get_platform_tools(user_config, platform_key))
 
             pr = self._provider_routing
-            max_iterations = int(os.getenv("HERMES_MAX_ITERATIONS", "90"))
+            max_iterations = int(os.getenv("AIDEUS_MAX_ITERATIONS", "90"))
             reasoning_config = self._resolve_session_reasoning_config(source=source)
             self._reasoning_config = reasoning_config
             self._service_tier = self._load_service_tier()
@@ -7481,7 +7481,7 @@ class GatewayRunner:
 
         raw_args = event.get_command_args().strip()
         args, persist_global = self._parse_reasoning_command_args(raw_args)
-        config_path = _hermes_home / "config.yaml"
+        config_path = _aideus_home / "config.yaml"
         session_key = self._session_key_for_source(event.source)
         self._show_reasoning = self._load_show_reasoning()
         self._reasoning_config = self._resolve_session_reasoning_config(
@@ -7582,10 +7582,10 @@ class GatewayRunner:
     async def _handle_fast_command(self, event: MessageEvent) -> str:
         """Handle /fast — mirror the CLI Priority Processing toggle in gateway chats."""
         import yaml
-        from hermes_cli.models import model_supports_fast_mode
+        from aideus_cli.models import model_supports_fast_mode
 
         args = event.get_command_args().strip().lower()
-        config_path = _hermes_home / "config.yaml"
+        config_path = _aideus_home / "config.yaml"
         self._service_tier = self._load_service_tier()
 
         user_config = _load_gateway_config()
@@ -7666,7 +7666,7 @@ class GatewayRunner:
         have its own verbosity level independently.
         """
 
-        config_path = _hermes_home / "config.yaml"
+        config_path = _aideus_home / "config.yaml"
         platform_key = _platform_config_key(event.source.platform)
 
         # --- check config gate ------------------------------------------------
@@ -7735,7 +7735,7 @@ class GatewayRunner:
         """
         from gateway.runtime_footer import resolve_footer_config
 
-        config_path = _hermes_home / "config.yaml"
+        config_path = _aideus_home / "config.yaml"
         platform_key = _platform_config_key(event.source.platform)
 
         # --- parse argument -------------------------------------------------
@@ -8313,7 +8313,7 @@ class GatewayRunner:
                     i += 1
 
         try:
-            from hermes_state import SessionDB
+            from aideus_state import SessionDB
             from agent.insights import InsightsEngine
 
             loop = asyncio.get_running_loop()
@@ -8639,7 +8639,7 @@ class GatewayRunner:
         (e.g. a prior "Always Approve" click) without a gateway restart.
         """
         try:
-            from hermes_cli.config import load_config
+            from aideus_cli.config import load_config
             cfg = load_config()
             return cfg if isinstance(cfg, dict) else {}
         except Exception:
@@ -8771,10 +8771,10 @@ class GatewayRunner:
 
         Gateway uploads ONLY the summary report (system info + log tails),
         NOT full log files, to protect conversation privacy.  Users who need
-        full log uploads should use ``hermes debug share`` from the CLI.
+        full log uploads should use ``aideus debug share`` from the CLI.
         """
         import asyncio
-        from hermes_cli.debug import (
+        from aideus_cli.debug import (
             _capture_dump, collect_debug_report,
             upload_to_pastebin, _schedule_auto_delete,
             _GATEWAY_PRIVACY_NOTICE, _best_effort_sweep_expired_pastes,
@@ -8804,17 +8804,17 @@ class GatewayRunner:
 
             lines.append("")
             lines.append("⏱ Pastes will auto-delete in 6 hours.")
-            lines.append("For full log uploads, use `hermes debug share` from the CLI.")
-            lines.append("Share these links with the Hermes team for support.")
+            lines.append("For full log uploads, use `aideus debug share` from the CLI.")
+            lines.append("Share these links with the Aideus team for support.")
             return "\n".join(lines)
 
         return await loop.run_in_executor(None, _collect_and_upload)
 
     async def _handle_update_command(self, event: MessageEvent) -> str:
-        """Handle /update command — update Hermes Agent to the latest version.
+        """Handle /update command — update Aideus Agent to the latest version.
 
-        Spawns ``hermes update`` in a detached session (via ``setsid``) so it
-        survives the gateway restart that ``hermes update`` may trigger. Marker
+        Spawns ``aideus update`` in a detached session (via ``setsid``) so it
+        survives the gateway restart that ``aideus update`` may trigger. Marker
         files are written so either the current gateway process or the next one
         can notify the user when the update finishes.
         """
@@ -8822,7 +8822,7 @@ class GatewayRunner:
         import shutil
         import subprocess
         from datetime import datetime
-        from hermes_cli.config import is_managed, format_managed_message
+        from aideus_cli.config import is_managed, format_managed_message
 
         # Block non-messaging platforms (API server, webhooks, ACP)
         platform = event.source.platform
@@ -8833,12 +8833,12 @@ class GatewayRunner:
                 from gateway.platform_registry import platform_registry
                 entry = platform_registry.get(platform.value)
                 if not entry or not entry.allow_update_command:
-                    return "✗ /update is only available from messaging platforms. Run `hermes update` from the terminal."
+                    return "✗ /update is only available from messaging platforms. Run `aideus update` from the terminal."
             except Exception:
-                return "✗ /update is only available from messaging platforms. Run `hermes update` from the terminal."
+                return "✗ /update is only available from messaging platforms. Run `aideus update` from the terminal."
 
         if is_managed():
-            return f"✗ {format_managed_message('update Hermes Agent')}"
+            return f"✗ {format_managed_message('update Aideus Agent')}"
 
         project_root = Path(__file__).parent.parent.resolve()
         git_dir = project_root / '.git'
@@ -8846,18 +8846,18 @@ class GatewayRunner:
         if not git_dir.exists():
             return "✗ Not a git repository — cannot update."
 
-        hermes_cmd = _resolve_hermes_bin()
-        if not hermes_cmd:
+        aideus_cmd = _resolve_aideus_bin()
+        if not aideus_cmd:
             return (
-                "✗ Could not locate the `hermes` command. "
-                "Hermes is running, but the update command could not find the "
+                "✗ Could not locate the `aideus` command. "
+                "Aideus is running, but the update command could not find the "
                 "executable on PATH or via the current Python interpreter. "
-                "Try running `hermes update` manually in your terminal."
+                "Try running `aideus update` manually in your terminal."
             )
 
-        pending_path = _hermes_home / ".update_pending.json"
-        output_path = _hermes_home / ".update_output.txt"
-        exit_code_path = _hermes_home / ".update_exit_code"
+        pending_path = _aideus_home / ".update_pending.json"
+        output_path = _aideus_home / ".update_output.txt"
+        exit_code_path = _aideus_home / ".update_exit_code"
         session_key = self._session_key_for_source(event.source)
         pending = {
             "platform": event.source.platform.value,
@@ -8871,7 +8871,7 @@ class GatewayRunner:
         _tmp_pending.replace(pending_path)
         exit_code_path.unlink(missing_ok=True)
 
-        # Spawn `hermes update --gateway` detached so it survives gateway restart.
+        # Spawn `aideus update --gateway` detached so it survives gateway restart.
         # --gateway enables file-based IPC for interactive prompts (stash
         # restore, config migration) so the gateway can forward them to the
         # user instead of silently skipping them.
@@ -8879,9 +8879,9 @@ class GatewayRunner:
         # where systemd-run --user fails due to missing D-Bus session).
         # PYTHONUNBUFFERED ensures output is flushed line-by-line so the
         # gateway can stream it to the messenger in near-real-time.
-        hermes_cmd_str = " ".join(shlex.quote(part) for part in hermes_cmd)
+        aideus_cmd_str = " ".join(shlex.quote(part) for part in aideus_cmd)
         update_cmd = (
-            f"PYTHONUNBUFFERED=1 {hermes_cmd_str} update --gateway"
+            f"PYTHONUNBUFFERED=1 {aideus_cmd_str} update --gateway"
             f" > {shlex.quote(str(output_path))} 2>&1; "
             f"status=$?; printf '%s' \"$status\" > {shlex.quote(str(exit_code_path))}"
         )
@@ -8909,7 +8909,7 @@ class GatewayRunner:
             return f"✗ Failed to start update: {e}"
 
         self._schedule_update_notification_watch()
-        return "⚕ Starting Hermes update… I'll stream progress here."
+        return "⚕ Starting Aideus update… I'll stream progress here."
 
     def _schedule_update_notification_watch(self) -> None:
         """Ensure a background task is watching for update completion."""
@@ -8930,7 +8930,7 @@ class GatewayRunner:
         stream_interval: float = 4.0,
         timeout: float = 1800.0,
     ) -> None:
-        """Watch ``hermes update --gateway``, streaming output + forwarding prompts.
+        """Watch ``aideus update --gateway``, streaming output + forwarding prompts.
 
         Polls ``.update_output.txt`` for new content and sends chunks to the
         user periodically.  Detects ``.update_prompt.json`` (written by the
@@ -8938,11 +8938,11 @@ class GatewayRunner:
         the messenger.  The user's next message is intercepted by
         ``_handle_message`` and written to ``.update_response``.
         """
-        pending_path = _hermes_home / ".update_pending.json"
-        claimed_path = _hermes_home / ".update_pending.claimed.json"
-        output_path = _hermes_home / ".update_output.txt"
-        exit_code_path = _hermes_home / ".update_exit_code"
-        prompt_path = _hermes_home / ".update_prompt.json"
+        pending_path = _aideus_home / ".update_pending.json"
+        claimed_path = _aideus_home / ".update_pending.claimed.json"
+        output_path = _aideus_home / ".update_output.txt"
+        exit_code_path = _aideus_home / ".update_exit_code"
+        prompt_path = _aideus_home / ".update_prompt.json"
 
         loop = asyncio.get_running_loop()
         deadline = loop.time() + timeout
@@ -9028,9 +9028,9 @@ class GatewayRunner:
                     exit_code_raw = exit_code_path.read_text().strip() or "1"
                     exit_code = int(exit_code_raw)
                     if exit_code == 0:
-                        await adapter.send(chat_id, "✅ Hermes update finished.")
+                        await adapter.send(chat_id, "✅ Aideus update finished.")
                     else:
-                        await adapter.send(chat_id, "❌ Hermes update failed (exit code {}).".format(exit_code))
+                        await adapter.send(chat_id, "❌ Aideus update failed (exit code {}).".format(exit_code))
                     logger.info("Update finished (exit=%s), notified %s", exit_code, session_key)
                 except Exception as e:
                     logger.warning("Update final notification failed: %s", e)
@@ -9039,7 +9039,7 @@ class GatewayRunner:
                 for p in (pending_path, claimed_path, output_path,
                           exit_code_path, prompt_path):
                     p.unlink(missing_ok=True)
-                (_hermes_home / ".update_response").unlink(missing_ok=True)
+                (_aideus_home / ".update_response").unlink(missing_ok=True)
                 self._update_prompt_pending.pop(session_key, None)
                 return
 
@@ -9111,13 +9111,13 @@ class GatewayRunner:
             exit_code_path.write_text("124")
             await _flush_buffer()
             try:
-                await adapter.send(chat_id, "❌ Hermes update timed out after 30 minutes.")
+                await adapter.send(chat_id, "❌ Aideus update timed out after 30 minutes.")
             except Exception:
                 pass
             for p in (pending_path, claimed_path, output_path,
                       exit_code_path, prompt_path):
                 p.unlink(missing_ok=True)
-            (_hermes_home / ".update_response").unlink(missing_ok=True)
+            (_aideus_home / ".update_response").unlink(missing_ok=True)
             self._update_prompt_pending.pop(session_key, None)
 
     async def _send_update_notification(self) -> bool:
@@ -9130,10 +9130,10 @@ class GatewayRunner:
         cannot resolve the adapter (e.g. after a gateway restart where the
         platform hasn't reconnected yet).
         """
-        pending_path = _hermes_home / ".update_pending.json"
-        claimed_path = _hermes_home / ".update_pending.claimed.json"
-        output_path = _hermes_home / ".update_output.txt"
-        exit_code_path = _hermes_home / ".update_exit_code"
+        pending_path = _aideus_home / ".update_pending.json"
+        claimed_path = _aideus_home / ".update_pending.claimed.json"
+        output_path = _aideus_home / ".update_output.txt"
+        exit_code_path = _aideus_home / ".update_exit_code"
 
         if not pending_path.exists() and not claimed_path.exists():
             return False
@@ -9180,14 +9180,14 @@ class GatewayRunner:
                     if len(output) > 3500:
                         output = "…" + output[-3500:]
                     if exit_code == 0:
-                        msg = f"✅ Hermes update finished.\n\n```\n{output}\n```"
+                        msg = f"✅ Aideus update finished.\n\n```\n{output}\n```"
                     else:
-                        msg = f"❌ Hermes update failed.\n\n```\n{output}\n```"
+                        msg = f"❌ Aideus update failed.\n\n```\n{output}\n```"
                 else:
                     if exit_code == 0:
-                        msg = "✅ Hermes update finished successfully."
+                        msg = "✅ Aideus update finished successfully."
                     else:
-                        msg = "❌ Hermes update failed. Check the gateway logs or run `hermes update` manually for details."
+                        msg = "❌ Aideus update failed. Check the gateway logs or run `aideus update` manually for details."
                 await adapter.send(chat_id, msg)
                 logger.info(
                     "Sent post-update notification to %s:%s (exit=%s)",
@@ -9208,7 +9208,7 @@ class GatewayRunner:
 
     async def _send_restart_notification(self) -> None:
         """Notify the chat that initiated /restart that the gateway is back."""
-        notify_path = _hermes_home / ".restart_notify.json"
+        notify_path = _aideus_home / ".restart_notify.json"
         if not notify_path.exists():
             return
 
@@ -9290,7 +9290,7 @@ class GatewayRunner:
         try:
             from agent.image_routing import decide_image_input_mode
             from agent.auxiliary_client import _read_main_model, _read_main_provider
-            from hermes_cli.config import load_config
+            from aideus_cli.config import load_config
 
             cfg = load_config()
             provider = _read_main_provider()
@@ -9389,8 +9389,8 @@ class GatewayRunner:
             disabled_note = "[The user sent voice message(s), but transcription is disabled in config."
             if self._has_setup_skill():
                 disabled_note += (
-                    " You have a skill called hermes-agent-setup that can help "
-                    "users configure Hermes features including voice, tools, and more."
+                    " You have a skill called aideus-agent-setup that can help "
+                    "users configure Aideus features including voice, tools, and more."
                 )
             disabled_note += "]"
             if user_text:
@@ -9424,8 +9424,8 @@ class GatewayRunner:
                         )
                         if self._has_setup_skill():
                             _no_stt_note += (
-                                " You have a skill called hermes-agent-setup "
-                                "that can help users configure Hermes features "
+                                " You have a skill called aideus-agent-setup "
+                                "that can help users configure Aideus features "
                                 "including voice, tools, and more."
                             )
                         _no_stt_note += "]"
@@ -9953,7 +9953,7 @@ class GatewayRunner:
         try:
             interrupt_event = getattr(adapter, "_active_sessions", {}).get(session_key)
             if interrupt_event is not None:
-                setattr(interrupt_event, "_hermes_run_generation", int(generation))
+                setattr(interrupt_event, "_aideus_run_generation", int(generation))
         except Exception:
             pass
 
@@ -10156,7 +10156,7 @@ class GatewayRunner:
         return len(to_evict)
 
     # ------------------------------------------------------------------
-    # Proxy mode: forward messages to a remote Hermes API server
+    # Proxy mode: forward messages to a remote Aideus API server
     # ------------------------------------------------------------------
 
     def _get_proxy_url(self) -> Optional[str]:
@@ -10185,7 +10185,7 @@ class GatewayRunner:
         run_generation: Optional[int] = None,
         event_message_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Forward the message to a remote Hermes API server instead of
+        """Forward the message to a remote Aideus API server instead of
         running a local AIAgent.
 
         When ``GATEWAY_PROXY_URL`` (or ``gateway.proxy_url`` in config.yaml)
@@ -10226,7 +10226,7 @@ class GatewayRunner:
         # Build messages in OpenAI chat format --------------------------
         #
         # The remote api_server can maintain session continuity via
-        # X-Hermes-Session-Id, so it loads its own history.  We only
+        # X-Aideus-Session-Id, so it loads its own history.  We only
         # need to send the current user message.  If the remote has
         # no history for this session yet, include what we have locally
         # so the first exchange has context.
@@ -10252,10 +10252,10 @@ class GatewayRunner:
         if proxy_key:
             headers["Authorization"] = f"Bearer {proxy_key}"
         if session_id:
-            headers["X-Hermes-Session-Id"] = session_id
+            headers["X-Aideus-Session-Id"] = session_id
 
         body = {
-            "model": "hermes-agent",
+            "model": "aideus-agent",
             "messages": api_messages,
             "stream": True,
         }
@@ -10509,7 +10509,7 @@ class GatewayRunner:
         user_config = _load_gateway_config()
         platform_key = _platform_config_key(source.platform)
 
-        from hermes_cli.tools_config import _get_platform_tools
+        from aideus_cli.tools_config import _get_platform_tools
         enabled_toolsets = sorted(_get_platform_tools(user_config, platform_key))
 
         display_config = user_config.get("display", {})
@@ -10531,7 +10531,7 @@ class GatewayRunner:
 
         # Tool progress mode — resolved per-platform with env var fallback
         _resolved_tp = resolve_display_setting(user_config, platform_key, "tool_progress")
-        _env_tp = os.getenv("HERMES_TOOL_PROGRESS_MODE")
+        _env_tp = os.getenv("AIDEUS_TOOL_PROGRESS_MODE")
         _display_cfg = display_config if isinstance(display_config, dict) else {}
         _platforms_cfg = _display_cfg.get("platforms") or {}
         _platform_cfg = _platforms_cfg.get(platform_key) or {}
@@ -10603,7 +10603,7 @@ class GatewayRunner:
                         if gate_on and not is_seen(_cfg, TOOL_PROGRESS_FLAG):
                             long_tool_hint_fired[0] = True
                             progress_queue.put(tool_progress_hint_gateway())
-                            mark_seen(_hermes_home / "config.yaml", TOOL_PROGRESS_FLAG)
+                            mark_seen(_aideus_home / "config.yaml", TOOL_PROGRESS_FLAG)
                 except Exception as _hint_err:
                     logger.debug("tool-progress onboarding hint failed: %s", _hint_err)
                 return
@@ -10946,10 +10946,10 @@ class GatewayRunner:
 
             # session_key is now set via contextvars in _set_session_env()
             # (concurrency-safe). Keep os.environ as fallback for CLI/cron.
-            os.environ["HERMES_SESSION_KEY"] = session_key or ""
+            os.environ["AIDEUS_SESSION_KEY"] = session_key or ""
 
             # Read from env var or use default (same as CLI)
-            max_iterations = int(os.getenv("HERMES_MAX_ITERATIONS", "90"))
+            max_iterations = int(os.getenv("AIDEUS_MAX_ITERATIONS", "90"))
             
             # Map platform enum to the platform hint key the agent understands.
             # Platform.LOCAL ("local") maps to "cli"; others pass through as-is.
@@ -11753,9 +11753,9 @@ class GatewayRunner:
         # Periodic "still working" notifications for long-running tasks.
         # Fires every N seconds so the user knows the agent hasn't died.
         # Config: agent.gateway_notify_interval in config.yaml, or
-        # HERMES_AGENT_NOTIFY_INTERVAL env var.  Default 180s (3 min).
+        # AIDEUS_AGENT_NOTIFY_INTERVAL env var.  Default 180s (3 min).
         # 0 = disable notifications.
-        _NOTIFY_INTERVAL_RAW = float(os.getenv("HERMES_AGENT_NOTIFY_INTERVAL", 180))
+        _NOTIFY_INTERVAL_RAW = float(os.getenv("AIDEUS_AGENT_NOTIFY_INTERVAL", 180))
         _NOTIFY_INTERVAL = _NOTIFY_INTERVAL_RAW if _NOTIFY_INTERVAL_RAW > 0 else None
         _notify_start = time.time()
 
@@ -11801,11 +11801,11 @@ class GatewayRunner:
             # configured duration is caught and killed.  (#4815)
             #
             # Config: agent.gateway_timeout in config.yaml, or
-            # HERMES_AGENT_TIMEOUT env var (env var takes precedence).
+            # AIDEUS_AGENT_TIMEOUT env var (env var takes precedence).
             # Default 1800s (30 min inactivity).  0 = unlimited.
-            _agent_timeout_raw = float(os.getenv("HERMES_AGENT_TIMEOUT", 1800))
+            _agent_timeout_raw = float(os.getenv("AIDEUS_AGENT_TIMEOUT", 1800))
             _agent_timeout = _agent_timeout_raw if _agent_timeout_raw > 0 else None
-            _agent_warning_raw = float(os.getenv("HERMES_AGENT_TIMEOUT_WARNING", 900))
+            _agent_warning_raw = float(os.getenv("AIDEUS_AGENT_TIMEOUT_WARNING", 900))
             _agent_warning = _agent_warning_raw if _agent_warning_raw > 0 else None
             _warning_fired = False
             _executor_task = asyncio.ensure_future(
@@ -12037,7 +12037,7 @@ class GatewayRunner:
                 _pending_cmd_word = _pending_parts[0][1:].lower() if _pending_parts else ""
                 if _pending_cmd_word:
                     try:
-                        from hermes_cli.commands import resolve_command as _rc_pending
+                        from aideus_cli.commands import resolve_command as _rc_pending
                         if _rc_pending(_pending_cmd_word):
                             logger.info(
                                 "Discarding command '/%s' from pending queue — "
@@ -12270,18 +12270,18 @@ def _start_cron_ticker(stop_event: threading.Event, adapters=None, loop=None, in
     Background thread that ticks the cron scheduler at a regular interval.
     
     Runs inside the gateway process so cronjobs fire automatically without
-    needing a separate `hermes cron daemon` or system cron entry.
+    needing a separate `aideus cron daemon` or system cron entry.
 
     When ``adapters`` and ``loop`` are provided, passes them through to the
     cron delivery path so live adapters can be used for E2EE rooms.
 
     Also refreshes the channel directory every 5 minutes and prunes the
-    image/audio/document cache + expired ``hermes debug share`` pastes
+    image/audio/document cache + expired ``aideus debug share`` pastes
     once per hour.
     """
     from cron.scheduler import tick as cron_tick
     from gateway.platforms.base import cleanup_image_cache, cleanup_document_cache
-    from hermes_cli.debug import _sweep_expired_pastes
+    from aideus_cli.debug import _sweep_expired_pastes
 
     IMAGE_CACHE_EVERY = 60   # ticks — once per hour at default 60s interval
     CHANNEL_DIR_EVERY = 5    # ticks — every 5 minutes
@@ -12372,9 +12372,9 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
                  when the previous process hasn't fully exited yet.
     """
     # ── Duplicate-instance guard ──────────────────────────────────────
-    # Prevent two gateways from running under the same HERMES_HOME.
-    # The PID file is scoped to HERMES_HOME, so future multi-profile
-    # setups (each profile using a distinct HERMES_HOME) will naturally
+    # Prevent two gateways from running under the same AIDEUS_HOME.
+    # The PID file is scoped to AIDEUS_HOME, so future multi-profile
+    # setups (each profile using a distinct AIDEUS_HOME) will naturally
     # allow concurrent instances without tripping this guard.
     from gateway.status import (
         acquire_gateway_runtime_lock,
@@ -12441,7 +12441,7 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
             # remove_pid_file() is a no-op when the PID doesn't match.
             # Force-unlink to cover the old-process-crashed case.
             try:
-                (get_hermes_home() / "gateway.pid").unlink(missing_ok=True)
+                (get_aideus_home() / "gateway.pid").unlink(missing_ok=True)
             except Exception:
                 pass
             # Clean up any takeover marker the old process didn't consume
@@ -12465,17 +12465,17 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
             except Exception:
                 pass
         else:
-            hermes_home = str(get_hermes_home())
+            aideus_home = str(get_aideus_home())
             logger.error(
-                "Another gateway instance is already running (PID %d, HERMES_HOME=%s). "
-                "Use 'hermes gateway restart' to replace it, or 'hermes gateway stop' first.",
-                existing_pid, hermes_home,
+                "Another gateway instance is already running (PID %d, AIDEUS_HOME=%s). "
+                "Use 'aideus gateway restart' to replace it, or 'aideus gateway stop' first.",
+                existing_pid, aideus_home,
             )
             print(
                 f"\n❌ Gateway already running (PID {existing_pid}).\n"
-                f"   Use 'hermes gateway restart' to replace it,\n"
-                f"   or 'hermes gateway stop' to kill it first.\n"
-                f"   Or use 'hermes gateway run --replace' to auto-replace.\n"
+                f"   Use 'aideus gateway restart' to replace it,\n"
+                f"   or 'aideus gateway stop' to kill it first.\n"
+                f"   Or use 'aideus gateway run --replace' to auto-replace.\n"
             )
             return False
 
@@ -12489,8 +12489,8 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
     # Centralized logging — agent.log (INFO+), errors.log (WARNING+),
     # and gateway.log (INFO+, gateway-component records only).
     # Idempotent, so repeated calls from AIAgent.__init__ won't duplicate.
-    from hermes_logging import setup_logging
-    setup_logging(hermes_home=_hermes_home, mode="gateway")
+    from aideus_logging import setup_logging
+    setup_logging(aideus_home=_aideus_home, mode="gateway")
 
     # Optional stderr handler — level driven by -v/-q flags on the CLI.
     # verbosity=None (-q/--quiet): no stderr output
@@ -12526,7 +12526,7 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
         # before sending SIGTERM. If present, treat the signal as a
         # planned shutdown and exit 0 so systemd's Restart=on-failure
         # doesn't revive us (which would flap-fight the replacer when
-        # both services are enabled, e.g. hermes.service + hermes-
+        # both services are enabled, e.g. aideus.service + aideus-
         # gateway.service from pre-rename installs).
         planned_takeover = False
         try:
@@ -12542,8 +12542,8 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
         else:
             _signal_initiated_shutdown = True
             logger.info("Received SIGTERM/SIGINT — initiating shutdown")
-        # Diagnostic: log all hermes-related processes so we can identify
-        # what triggered the signal (hermes update, hermes gateway restart,
+        # Diagnostic: log all aideus-related processes so we can identify
+        # what triggered the signal (aideus update, aideus gateway restart,
         # a stale detached subprocess, etc.).
         try:
             import subprocess as _sp
@@ -12551,18 +12551,18 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
                 ["ps", "aux"],
                 capture_output=True, text=True, timeout=3,
             )
-            _hermes_procs = [
+            _aideus_procs = [
                 line for line in _ps.stdout.splitlines()
-                if ("hermes" in line.lower() or "gateway" in line.lower())
+                if ("aideus" in line.lower() or "gateway" in line.lower())
                 and str(os.getpid()) not in line.split()[1:2]  # exclude self
             ]
-            if _hermes_procs:
+            if _aideus_procs:
                 logger.warning(
-                    "Shutdown diagnostic — other hermes processes running:\n  %s",
-                    "\n  ".join(_hermes_procs),
+                    "Shutdown diagnostic — other aideus processes running:\n  %s",
+                    "\n  ".join(_aideus_procs),
                 )
             else:
-                logger.info("Shutdown diagnostic — no other hermes processes found")
+                logger.info("Shutdown diagnostic — no other aideus processes found")
         except Exception:
             pass
         asyncio.create_task(runner.stop())
@@ -12675,7 +12675,7 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
     # When a signal (SIGTERM/SIGINT) caused the shutdown and it wasn't a
     # planned restart (/restart, /update, SIGUSR1), exit non-zero so
     # systemd's Restart=on-failure revives the process.  This covers:
-    #   - hermes update killing the gateway mid-work
+    #   - aideus update killing the gateway mid-work
     #   - External kill commands
     #   - WSL2/container runtime sending unexpected signals
     # systemctl stop is safe: systemd tracks "stop requested" state
@@ -12694,7 +12694,7 @@ def main():
     """CLI entry point for the gateway."""
     import argparse
     
-    parser = argparse.ArgumentParser(description="Hermes Gateway - Multi-platform messaging")
+    parser = argparse.ArgumentParser(description="Aideus Gateway - Multi-platform messaging")
     parser.add_argument("--config", "-c", help="Path to gateway config file")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     

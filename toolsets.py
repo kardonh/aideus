@@ -28,7 +28,7 @@ from typing import List, Dict, Any, Set, Optional
 
 # Shared tool list for CLI and all messaging platform toolsets.
 # Edit this once to update all platforms simultaneously.
-_HERMES_CORE_TOOLS = [
+_AIDEUS_CORE_TOOLS = [
     # Web
     "web_search", "web_extract",
     # Terminal + process management
@@ -266,13 +266,13 @@ TOOLSETS = {
     },
     
     # ==========================================================================
-    # Full Hermes toolsets (CLI + messaging platforms)
+    # Full Aideus toolsets (CLI + messaging platforms)
     #
     # All platforms share the same core tools (including send_message,
     # which is gated on gateway running via its check_fn).
     # ==========================================================================
 
-    "hermes-acp": {
+    "aideus-acp": {
         "description": "Editor integration (VS Code, Zed, JetBrains) — coding-focused tools without messaging, audio, or clarify UI",
         "tools": [
             "web_search", "web_extract",
@@ -291,7 +291,7 @@ TOOLSETS = {
         "includes": []
     },
 
-    "hermes-api-server": {
+    "aideus-api-server": {
         "description": "OpenAI-compatible API server — full agent tools accessible via HTTP (no interactive UI tools like clarify or send_message)",
         "tools": [
             # Web
@@ -324,95 +324,95 @@ TOOLSETS = {
         "includes": []
     },
     
-    "hermes-cli": {
+    "aideus-cli": {
         "description": "Full interactive CLI toolset - all default tools plus cronjob management",
-        "tools": _HERMES_CORE_TOOLS,
+        "tools": _AIDEUS_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-cron": {
-        # Mirrors hermes-cli so cron's "default" toolset is the same set of
-        # core tools users see interactively — then `hermes tools` filters
+    "aideus-cron": {
+        # Mirrors aideus-cli so cron's "default" toolset is the same set of
+        # core tools users see interactively — then `aideus tools` filters
         # them down per the platform config. _DEFAULT_OFF_TOOLSETS (moa,
         # homeassistant, rl) are excluded by _get_platform_tools() unless
         # the user explicitly enables them.
-        "description": "Default cron toolset - same core tools as hermes-cli; gated by `hermes tools`",
-        "tools": _HERMES_CORE_TOOLS,
+        "description": "Default cron toolset - same core tools as aideus-cli; gated by `aideus tools`",
+        "tools": _AIDEUS_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-telegram": {
+    "aideus-telegram": {
         "description": "Telegram bot toolset - full access for personal use (terminal has safety checks)",
-        "tools": _HERMES_CORE_TOOLS,
+        "tools": _AIDEUS_CORE_TOOLS,
         "includes": []
     },
     
-    "hermes-discord": {
+    "aideus-discord": {
         "description": "Discord bot toolset - full access (terminal has safety checks via dangerous command approval)",
-        "tools": _HERMES_CORE_TOOLS + [
+        "tools": _AIDEUS_CORE_TOOLS + [
             "discord",
             "discord_admin",
         ],
         "includes": []
     },
     
-    "hermes-whatsapp": {
+    "aideus-whatsapp": {
         "description": "WhatsApp bot toolset - similar to Telegram (personal messaging, more trusted)",
-        "tools": _HERMES_CORE_TOOLS,
+        "tools": _AIDEUS_CORE_TOOLS,
         "includes": []
     },
     
-    "hermes-slack": {
+    "aideus-slack": {
         "description": "Slack bot toolset - full access for workspace use (terminal has safety checks)",
-        "tools": _HERMES_CORE_TOOLS,
+        "tools": _AIDEUS_CORE_TOOLS,
         "includes": []
     },
     
-    "hermes-signal": {
+    "aideus-signal": {
         "description": "Signal bot toolset - encrypted messaging platform (full access)",
-        "tools": _HERMES_CORE_TOOLS,
+        "tools": _AIDEUS_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-bluebubbles": {
+    "aideus-bluebubbles": {
         "description": "BlueBubbles iMessage bot toolset - Apple iMessage via local BlueBubbles server",
-        "tools": _HERMES_CORE_TOOLS,
+        "tools": _AIDEUS_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-homeassistant": {
+    "aideus-homeassistant": {
         "description": "Home Assistant bot toolset - smart home event monitoring and control",
-        "tools": _HERMES_CORE_TOOLS,
+        "tools": _AIDEUS_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-email": {
-        "description": "Email bot toolset - interact with Hermes via email (IMAP/SMTP)",
-        "tools": _HERMES_CORE_TOOLS,
+    "aideus-email": {
+        "description": "Email bot toolset - interact with Aideus via email (IMAP/SMTP)",
+        "tools": _AIDEUS_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-mattermost": {
+    "aideus-mattermost": {
         "description": "Mattermost bot toolset - self-hosted team messaging (full access)",
-        "tools": _HERMES_CORE_TOOLS,
+        "tools": _AIDEUS_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-matrix": {
+    "aideus-matrix": {
         "description": "Matrix bot toolset - decentralized encrypted messaging (full access)",
-        "tools": _HERMES_CORE_TOOLS,
+        "tools": _AIDEUS_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-dingtalk": {
+    "aideus-dingtalk": {
         "description": "DingTalk bot toolset - enterprise messaging platform (full access)",
-        "tools": _HERMES_CORE_TOOLS,
+        "tools": _AIDEUS_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-feishu": {
+    "aideus-feishu": {
         "description": "Feishu/Lark bot toolset - enterprise messaging via Feishu/Lark (full access)",
-        "tools": _HERMES_CORE_TOOLS + [
+        "tools": _AIDEUS_CORE_TOOLS + [
             "feishu_doc_read",
             "feishu_drive_list_comments",
             "feishu_drive_list_comment_replies",
@@ -422,33 +422,33 @@ TOOLSETS = {
         "includes": []
     },
 
-    "hermes-weixin": {
+    "aideus-weixin": {
         "description": "Weixin bot toolset - personal WeChat messaging via iLink (full access)",
-        "tools": _HERMES_CORE_TOOLS,
+        "tools": _AIDEUS_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-qqbot": {
+    "aideus-qqbot": {
         "description": "QQBot toolset - QQ messaging via Official Bot API v2 (full access)",
-        "tools": _HERMES_CORE_TOOLS,
+        "tools": _AIDEUS_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-wecom": {
+    "aideus-wecom": {
         "description": "WeCom bot toolset - enterprise WeChat messaging (full access)",
-        "tools": _HERMES_CORE_TOOLS,
+        "tools": _AIDEUS_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-wecom-callback": {
+    "aideus-wecom-callback": {
         "description": "WeCom callback toolset - enterprise self-built app messaging (full access)",
-        "tools": _HERMES_CORE_TOOLS,
+        "tools": _AIDEUS_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-yuanbao": {
+    "aideus-yuanbao": {
         "description": "Yuanbao Bot 元宝消息平台工具集 - 群信息、成员查询、私聊、贴纸表情",
-        "tools": _HERMES_CORE_TOOLS + [
+        "tools": _AIDEUS_CORE_TOOLS + [
             "yb_query_group_info",
             "yb_query_group_members",
             "yb_send_dm",
@@ -459,22 +459,22 @@ TOOLSETS = {
         "includes": []
     },
 
-    "hermes-sms": {
-        "description": "SMS bot toolset - interact with Hermes via SMS (Twilio)",
-        "tools": _HERMES_CORE_TOOLS,
+    "aideus-sms": {
+        "description": "SMS bot toolset - interact with Aideus via SMS (Twilio)",
+        "tools": _AIDEUS_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-webhook": {
+    "aideus-webhook": {
         "description": "Webhook toolset - receive and process external webhook events",
-        "tools": _HERMES_CORE_TOOLS,
+        "tools": _AIDEUS_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-gateway": {
+    "aideus-gateway": {
         "description": "Gateway toolset - union of all messaging platform tools",
         "tools": [],
-        "includes": ["hermes-telegram", "hermes-discord", "hermes-whatsapp", "hermes-slack", "hermes-signal", "hermes-bluebubbles", "hermes-homeassistant", "hermes-email", "hermes-sms", "hermes-mattermost", "hermes-matrix", "hermes-dingtalk", "hermes-feishu", "hermes-wecom", "hermes-wecom-callback", "hermes-weixin", "hermes-qqbot", "hermes-webhook", "hermes-yuanbao"]
+        "includes": ["aideus-telegram", "aideus-discord", "aideus-whatsapp", "aideus-slack", "aideus-signal", "aideus-bluebubbles", "aideus-homeassistant", "aideus-email", "aideus-sms", "aideus-mattermost", "aideus-matrix", "aideus-dingtalk", "aideus-feishu", "aideus-wecom", "aideus-wecom-callback", "aideus-weixin", "aideus-qqbot", "aideus-webhook", "aideus-yuanbao"]
     }
 }
 
@@ -564,15 +564,15 @@ def resolve_toolset(name: str, visited: Set[str] = None) -> List[str]:
     # Get toolset definition
     toolset = get_toolset(name)
     if not toolset:
-        # Auto-generate a toolset for plugin platforms (hermes-<name>).
-        # Gives them _HERMES_CORE_TOOLS plus any tools the plugin registered
+        # Auto-generate a toolset for plugin platforms (aideus-<name>).
+        # Gives them _AIDEUS_CORE_TOOLS plus any tools the plugin registered
         # into a toolset matching the platform name.
-        if name.startswith("hermes-"):
-            platform_name = name[len("hermes-"):]
+        if name.startswith("aideus-"):
+            platform_name = name[len("aideus-"):]
             try:
                 from gateway.platform_registry import platform_registry
                 if platform_registry.is_registered(platform_name):
-                    plugin_tools = set(_HERMES_CORE_TOOLS)
+                    plugin_tools = set(_AIDEUS_CORE_TOOLS)
                     try:
                         from tools.registry import registry
                         plugin_tools.update(

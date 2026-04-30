@@ -16,11 +16,11 @@ import pytest
 
 @pytest.fixture
 def curator_env(tmp_path, monkeypatch):
-    """Isolated HERMES_HOME + freshly reloaded curator + skill_usage modules."""
-    home = tmp_path / ".hermes"
+    """Isolated AIDEUS_HOME + freshly reloaded curator + skill_usage modules."""
+    home = tmp_path / ".aideus"
     (home / "skills").mkdir(parents=True)
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("AIDEUS_HOME", str(home))
 
     import tools.skill_usage as usage
     importlib.reload(usage)
@@ -453,8 +453,8 @@ def test_curator_review_prompt_offers_support_file_actions():
 
 
 def test_cli_unpin_refuses_bundled_skill(curator_env, capsys):
-    """hermes curator unpin must refuse bundled/hub skills too (matches pin)."""
-    from hermes_cli import curator as cli
+    """aideus curator unpin must refuse bundled/hub skills too (matches pin)."""
+    from aideus_cli import curator as cli
     skills_dir = curator_env["home"] / "skills"
     _write_skill(skills_dir, "ship-skill")
     (skills_dir / ".bundled_manifest").write_text(
@@ -471,7 +471,7 @@ def test_cli_unpin_refuses_bundled_skill(curator_env, capsys):
 
 
 def test_cli_pin_refuses_bundled_skill(curator_env, capsys):
-    from hermes_cli import curator as cli
+    from aideus_cli import curator as cli
     skills_dir = curator_env["home"] / "skills"
     _write_skill(skills_dir, "ship-skill")
     (skills_dir / ".bundled_manifest").write_text(

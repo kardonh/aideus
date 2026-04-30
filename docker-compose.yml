@@ -1,12 +1,12 @@
 #
-# docker-compose.yml for Hermes Agent
+# docker-compose.yml for Aideus Agent
 #
 # Usage:
-#   HERMES_UID=$(id -u) HERMES_GID=$(id -g) docker compose up -d
+#   AIDEUS_UID=$(id -u) AIDEUS_GID=$(id -g) docker compose up -d
 #
-# Set HERMES_UID / HERMES_GID to the host user that owns ~/.hermes so
+# Set AIDEUS_UID / AIDEUS_GID to the host user that owns ~/.aideus so
 # files created inside the container stay readable/writable on the host.
-# The entrypoint remaps the internal `hermes` user to these values via
+# The entrypoint remaps the internal `aideus` user to these values via
 # usermod/groupmod + gosu.
 #
 # Security notes:
@@ -21,15 +21,15 @@
 services:
   gateway:
     build: .
-    image: hermes-agent
-    container_name: hermes
+    image: aideus-agent
+    container_name: aideus
     restart: unless-stopped
     network_mode: host
     volumes:
-      - ~/.hermes:/opt/data
+      - ~/.aideus:/opt/data
     environment:
-      - HERMES_UID=${HERMES_UID:-10000}
-      - HERMES_GID=${HERMES_GID:-10000}
+      - AIDEUS_UID=${AIDEUS_UID:-10000}
+      - AIDEUS_GID=${AIDEUS_GID:-10000}
       # To expose the OpenAI-compatible API server beyond localhost,
       # uncomment BOTH lines (API_SERVER_KEY is mandatory for auth):
       # - API_SERVER_HOST=0.0.0.0
@@ -44,16 +44,16 @@ services:
     command: ["gateway", "run"]
 
   dashboard:
-    image: hermes-agent
-    container_name: hermes-dashboard
+    image: aideus-agent
+    container_name: aideus-dashboard
     restart: unless-stopped
     network_mode: host
     depends_on:
       - gateway
     volumes:
-      - ~/.hermes:/opt/data
+      - ~/.aideus:/opt/data
     environment:
-      - HERMES_UID=${HERMES_UID:-10000}
-      - HERMES_GID=${HERMES_GID:-10000}
+      - AIDEUS_UID=${AIDEUS_UID:-10000}
+      - AIDEUS_GID=${AIDEUS_GID:-10000}
     # Localhost-only. For remote access, tunnel via `ssh -L 9119:localhost:9119`.
     command: ["dashboard", "--host", "127.0.0.1", "--no-open"]
