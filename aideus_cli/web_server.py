@@ -2623,7 +2623,11 @@ async def get_models_analytics(days: int = 30):
 import re
 import asyncio
 
-from aideus_cli.pty_bridge import PtyBridge, PtyUnavailableError
+# Lazy-imported below: PtyBridge / PtyUnavailableError require POSIX `fcntl`,
+# which Python on native Windows does not ship. Importing at module load
+# would block `aideus dashboard` from starting at all on Windows; deferring
+# to the WebSocket handler lets the rest of the dashboard work and only the
+# in-browser /api/pty chat tab degrades.
 
 _RESIZE_RE = re.compile(rb"\x1b\[RESIZE:(\d+);(\d+)\]")
 _PTY_READ_CHUNK_TIMEOUT = 0.2
@@ -2742,6 +2746,13 @@ async def pty_ws(ws: WebSocket) -> None:
         await ws.close(code=1011)
         return
 
+
+    try:
+        from aideus_cli.pty_bridge import PtyBridge, PtyUnavailableError
+    except ImportError as exc:
+        await ws.send_text(f"\r\n\x1b[31mChat unavailable on this platform: {exc}\x1b[0m\r\n")
+        await ws.close(code=1011)
+        return
 
     try:
         bridge = PtyBridge.spawn(argv, cwd=cwd, env=env)
