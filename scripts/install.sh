@@ -73,6 +73,10 @@ while [[ $# -gt 0 ]]; do
             RUN_SETUP=false
             shift
             ;;
+        --skip-system-packages)
+            SKIP_SYSTEM_PACKAGES=true
+            shift
+            ;;
         --branch)
             BRANCH="$2"
             shift 2
@@ -608,6 +612,11 @@ install_system_packages() {
     HAS_FFMPEG=false
     local need_ripgrep=false
     local need_ffmpeg=false
+
+    if [ "${SKIP_SYSTEM_PACKAGES:-false}" = "true" ]; then
+        log_info "--skip-system-packages set; skipping ripgrep/ffmpeg install"
+        return 0
+    fi
 
     log_info "Checking ripgrep (fast file search)..."
     if command -v rg &> /dev/null; then

@@ -444,7 +444,7 @@ export async function runInstall(
     const shellProfile = getShellProfile(home);
     const installCmd = [
       shellProfile ? `source "${shellProfile}" 2>/dev/null;` : "",
-      "curl -fsSL https://raw.githubusercontent.com/Kardonh/aideus/main/scripts/install.sh | bash -s -- --skip-setup",
+      "curl -fsSL https://raw.githubusercontent.com/Kardonh/aideus/main/scripts/install.sh | bash -s -- --skip-setup --skip-system-packages",
     ].join(" ");
 
     const proc = spawn("bash", ["-c", installCmd], {
